@@ -1,0 +1,29 @@
+name = "package_CMI_prague"
+
+[deps]
+<<<<<<< HEAD
+DSP = "717857b8-e6f2-59f4-9121-6e50c889abd2"
+=======
+CausalityTools = "5520caf5-2dd7-5c5d-bfcb-a00e56ac49f7"
+>>>>>>> a725dbcbdebd07f06ebc50a695289f21e6a2f258
+DelayEmbeddings = "5732040d-69e3-5649-938a-b6b4f237613f"
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+DrWatson = "634d3b9d-ee7a-5ddf-bec9-22491ea816e1"
+Entropies = "ed8fcbec-b94c-44b6-89df-898894ad9591"
+<<<<<<< HEAD
+FFTW = "7a1cc6ca-52ef-59f5-83cd-3a7055c09341"
+MAT = "23992714-dd62-5051-b70f-ba57cb901cac"
+PyPlot = "d330b81b-6aea-500a-939a-2ce795aea3ee"
+Simplices = "d5428e67-3037-59ba-9ab1-57a04f0a3b6a"
+=======
+IJulia = "7073ff75-c697-5162-941a-fcdaad2a7d2a"
+Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
+PyPlot = "d330b81b-6aea-500a-939a-2ce795aea3ee"
+StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
+>>>>>>> a725dbcbdebd07f06ebc50a695289f21e6a2f258
+Suppressor = "fd094767-a336-5f1f-9728-57cf17d0bbfb"
+TransferEntropy = "ea221983-52f3-5440-99c7-13ea201cd633"
+package_CMI_prague = "79125185-979c-4519-b0a6-d4774d2ab5db"
+
+[compat]
+julia = "1.5.2"
