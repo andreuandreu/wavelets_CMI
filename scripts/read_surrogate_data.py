@@ -95,8 +95,8 @@ n_points = 131072#000 #13107200
 #name = '/Users/andreu/codes_TE/transfer_entropy_rossler_data/arosf11n00eps100raw.dat'
 max_coupling = 0.25
 #content = load_n_coupled_systems_read_once(100)
-name = '../data/exp_raw/binfiles/Rossler_bin_0.000.bin'
-read_bin_bin_dataframe(name)
+#name = '../data/exp_raw/binfiles/Rossler_bin_0.000.bin'
+#read_bin_bin_dataframe(name)
 
 
 #print ('len   '  , len(x_arr), len(y_arr),  len(x_arr[1]) )

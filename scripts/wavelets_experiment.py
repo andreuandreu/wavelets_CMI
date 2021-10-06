@@ -7,7 +7,7 @@ from numpy.fft import fft, ifft
 import pywt
 from scipy import signal
 
-name = '../data/exp_raw/binfiles/Rossler_bin_0.000.bin'
+name = '../../package_CMI_prague/data/exp_raw/binfiles/Rossler_bin_0.000.bin'
 
 
 #df = pd.read_csv('EURUSD.csv',sep='\t', index_col='Date')
@@ -15,20 +15,41 @@ name = '../data/exp_raw/binfiles/Rossler_bin_0.000.bin'
 #df.sort_index(inplace=True)
 #df = df.resample('W').last()
 #sig =  np.array(df['x'][0:1000])
-frequency = 1/10.
+frequencies = [1/10., 1/100, 1/1000] #items shall be below one
+amplitudes = [0.5, 1, 2]
 t = np.arange(200) #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+dt = 1
 ##dt = 1/len(t)#len(sig)
-#sig  = np.cos(2 * np.pi * 7 * t) + np.real(np.exp(-7*(t-0.4)**2)*np.exp(1j*2*np.pi*2*(t-0.4)))
-sig  = np.cos( 2*np.pi * frequency * t) + np.random.normal(0,0.1, size=(len(t))) #+ signal.gausspulse(t - 0.4, fc=2)
-#sig  = np.cos(2*np.pi*1*t) + np.cos(2*np.pi*10*t) + np.cos(2*np.pi*100*t)
 
+
+
+def create_signal(frequencies, amplitudes, t, noise = False, exp = False):
+    ''' return signals as the sume of cosinus of different frequencies
+    
+    noise or exponential delay can be added default is no'''
+    
+    sig_cos = []
+    sig_exp =  np.real(np.exp(-7*(t-0.4)**2)*np.exp(1j*2*np.pi*2*(t-0.4)))
+    sig_noise = np.random.normal(0,0.1, size=(len(t)))
+    sig = np.zeros(len(t))
+
+    for i, f in enumerate(frequencies):
+        sig_cos.append( np.cos( 2*np.pi * f * t) )  #+ signal.gausspulse(t - 0.4, fc=2)
+        sig += amplitudes[i]*sig_cos[i]
+    
+    if noise: sig += sig_noise
+    if exp: sig += sig_exp
+    
+    return sig
+    
+sig = create_signal(frequencies, amplitudes, t)
 
 
 #fft, ifft
 
 fft1d = fft(sig)
 
-nyquist=int(len(fft1d)/2.)
+nyquist = int(len(fft1d)/2.)
 
 def plot_signal_phase_fft():
     plt.rcParams['figure.figsize'] = [12, 7]
@@ -59,18 +80,19 @@ def plot_signal_phase_fft():
 #phase  = np.arctan()
 
 
-dt = 1
+
 def compute_wavelet():
-    central_periods = int( np.where(fft1d == max(fft1d[0:nyquist]))[0]/2 )
-    print('maxxxxxx', central_periods )
+    #central_periods = int( np.where(fft1d == max(fft1d[0:nyquist]))[0]/2 )
+
     units = 1
     wavelet = 'cmor1.5-1.0'
     scales = (
-                np.array(central_periods)
-                * (1.0 / dt)
+                np.array(1./np.array(frequencies))
+                * (1.0 / sampling_dt)
                 * pywt.central_frequency(wavelet)
             )
-    scales = int(central_periods)
+    #scales = int(central_periods)
+    #scales = central_periods
     padded_data =  sig
     coeffs, _ = pywt.cwt(
                 padded_data,
@@ -82,12 +104,9 @@ def compute_wavelet():
     return coeffs
 
 
-
-
 def amplitude_phase_wab(coef):
     
     amp = np.abs(coef[0])#np.sqrt( coef[0].imag**2 + coef[0].real**2 )
-    print( 'amp', amp[0])
     phase = np.angle(coef[0])#np.arctan2( coef[0].imag, coef[0].real ) 
     rec_signal = amp*np.cos(phase) #!!!!!!!!!!!!!!!!!!!!!!!!!"""
     return amp, phase, rec_signal
@@ -95,14 +114,14 @@ def amplitude_phase_wab(coef):
 sampling_dt = 1.0
 k0 = 6
 wavelet = wa.MorletWavelet()
-central_period = 1./frequency
+central_period = 1./np.array(frequencies)
 scales = (central_period    * (1.0 / sampling_dt)) / wavelet.fourier_factor(k0)#(
            # np.array(1.0/frequency)
           #  * (1.0 / sampling_dt)/wavelet.fourier_factor(k0)
        # )
 
 wave, period, scale, coi = wa.continous_wavelet( 
-    sig, dt, pad=True, wavelet=wa.MorletWavelet(), dj =0,  s0 =scales , j1 =0, k0=k0
+    sig, dt, pad=True, wavelet=wa.MorletWavelet(), dj =0,  s0 =scales[0] , j1 =0, k0=k0
     )
 coeffs = compute_wavelet()
 
