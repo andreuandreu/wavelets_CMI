@@ -7,6 +7,7 @@ from numpy.fft import fft, ifft
 import pywt
 from scipy import signal
 
+
 name = '../../package_CMI_prague/data/exp_raw/binfiles/Rossler_bin_0.000.bin'
 
 
@@ -19,16 +20,19 @@ frequencies = [1/20., 1/100, 1/6] #items shall be below one
 amplitudes = [0.5, 1, 2]
 t = np.arange(400) #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 sampling_dt = 1
+frequency_spacing = 1 #the spacing in log 2 scale
+num_bands = 11 # number of scales minus one do the spectral decomposition; ranges form s0  to  s0 * 2^(num_bands+dj)` 
+
 ##dt = 1/len(t)#len(sig)
 
 
-def create_signal(frequencies, amplitudes, t, noise = False, exp = False):
+def create_signal(frequencies, amplitudes, t, noise = False, gauss = False):
     ''' return signals as the sume of cosinus of different frequencies
     
     noise or exponential delay can be added default is no'''
     
     sig_cos = []
-    sig_exp =  np.real(np.exp(-7*(t-0.4)**2)*np.exp(1j*2*np.pi*2*(t-0.4)))
+    sig_gauss =  10*np.real(np.exp(-0.001*(t-len(t)/2)**2))#*np.exp(1j*2*np.pi*2*(t-0.4)))
     sig_noise = np.random.normal(0,0.1, size=(len(t)))
     sig = np.zeros(len(t))
 
@@ -37,44 +41,21 @@ def create_signal(frequencies, amplitudes, t, noise = False, exp = False):
         sig += amplitudes[i]*sig_cos[i]
     
     if noise: sig += sig_noise
-    if exp: sig += sig_exp
+    if gauss: sig += sig_gauss
     
     return sig
     
 
 
-def plot_signal_phase_fft():
-    plt.rcParams['figure.figsize'] = [12, 7]
-    fig, ax = plt.subplots(3,1)
-    
-    # plotting the signal 
-    ax[0].set_xlabel('Time')
-    ax[0].set_ylabel('Amplitude')
-    ax[0].set_title("Signal")
 
-    ax[0].plot(sig, color ='green')
-    
-    # plotting the phase spectrum of the signal 
-    ax[1].set_title("Phase Spectrum of the Signal")
-    ax[1].phase_spectrum(sig, color ='green')
-
-    # plotting the fft of the signal 
-    ax[2].set_title("fft Spectrum of the Signal")
-    ax[2].plot(fft1d[0:nyquist], 'r')
-
-    #ploting the wavelwet transform
-    #ax[2].pcolormesh(t, freq, np.abs(cwtmatr), cmap='viridis', shading='gouraud')
-    #ax[2].imshow(cwtmatr, extent=[-1, 1, 1, 31], cmap='PRGn', aspect='auto',
-    #            vmax=abs(cwtmatr).max(), vmin=-abs(cwtmatr).max())
  
 
 
-#phase  = np.arctan()
 
 
 
 def pywt_compute_wavelets():
-    #central_periods = int( np.where(fft1d == max(fft1d[0:nyquist]))[0]/2 )
+    
 
     units = 1
     wavelet = 'cmor1.5-1.0'
@@ -97,17 +78,24 @@ def pywt_compute_wavelets():
 
 
 
-def niko_compute_wavelets():
+def niko_compute_wavelets(freq = True):
 
     k0 = 6 #defines the size of the wavelet kernel, the bigger the smother, but eats up the edges of the data
     wavelet = wa.MorletWavelet()
     central_periods = 1./np.array(frequencies)
-    scales = (central_periods    * (1.0 / sampling_dt)) / wavelet.fourier_factor(k0)#(
-
+    
+    if freq: scales = (central_periods    * (1.0 / sampling_dt)) / wavelet.fourier_factor(k0)#(
+    else: 
+        scales = []
+        s0 = int( np.where(fft1d == max(fft1d[0:nyquist]))[0]/2 )/len(t)
+        for i in enumerate(num_bands):
+            scales.append(  s0 * 2**(i+frequency_spacing) )
+    
     waves = []
     periods = []
     wav_scales = []
     cois = []
+    
     for s in scales:
         wave, period, scale, coi = wa.continous_wavelet( 
             sig, sampling_dt, pad=True, wavelet=wa.MorletWavelet(), dj =0,  s0 =s , j1 =0, k0=k0
@@ -143,6 +131,30 @@ def wav_reconstructed_signal(waves):
     m, c = np.linalg.lstsq(fit_x, sig)[0]
     
     return m*rec_signal
+
+
+def plot_signal_phase_fft():
+
+
+    plt.rcParams['figure.figsize'] = [12, 7]
+    fig, ax = plt.subplots(3,1)
+    
+    # plotting the signal 
+    ax[0].set_xlabel('Time')
+    ax[0].set_ylabel('Amplitude')
+    ax[0].set_title("Signal")
+
+    ax[0].plot(sig, color ='green')
+    
+    # plotting the phase spectrum of the signal 
+    ax[1].set_title("Phase Spectrum of the Signal")
+    ax[1].phase_spectrum(sig, color ='green')
+
+    # plotting the fft of the signal 
+    ax[2].set_title("fft Spectrum of the Signal")
+    ax[2].loglog(fft1d[0:nyquist], 'r')
+    ax[2].loglog(frequencies, 'b')
+
 
 
 def plot_waves_amplitude_phase_WL(title, sig, rec_sig, waves):
@@ -196,12 +208,21 @@ def plot_comparison_methods(wav1, wav2):
     ax[3].plot(rec_signal, color ='blue')
     ax[3].plot(rec_signal2, color ='red')
 
+
+def FFT(t, sig):
+    n = len(t)
+    Δ = (max(t) - min(t)) / (n-1)
+    k = int(n/2)
+    f = np.arange(k) / (n*Δ)
+    Y = abs(fft(sig))[:k]
+    return (f, Y)
+
 #compute signal
-sig = create_signal(frequencies, amplitudes, t)
+sig = create_signal(frequencies, amplitudes, t )#gauss = True
 
 #compute 1d fourier trasformation
 #fft, ifft
-fft1d = fft(sig)
+freq_specrum, fft1d = FFT(t, sig)#fft(sig)/len(t)
 nyquist = int(len(fft1d)/2.)
 
 #compute wavelet decomposition for 2 different methods
@@ -216,7 +237,7 @@ rec_signal_nico = wav_reconstructed_signal(waves_nico)
 
 #plot signals and wavelets
 plot_signal_phase_fft()
-plot_waves_amplitude_phase_WL('python wavelet', sig, rec_signal_pywt, waves_pywt)
-plot_waves_amplitude_phase_WL('nico wavelet', sig, rec_signal_nico, waves_nico)
+#plot_waves_amplitude_phase_WL('python wavelet', sig, rec_signal_pywt, waves_pywt)
+#plot_waves_amplitude_phase_WL('nico wavelet', sig, rec_signal_nico, waves_nico)
 #plot_amplitude_phase_WL()
 plt.show()
