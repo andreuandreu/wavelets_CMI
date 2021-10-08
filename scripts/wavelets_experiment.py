@@ -15,12 +15,11 @@ name = '../../package_CMI_prague/data/exp_raw/binfiles/Rossler_bin_0.000.bin'
 #df.sort_index(inplace=True)
 #df = df.resample('W').last()
 #sig =  np.array(df['x'][0:1000])
-frequencies = [1/10., 1/100, 1/1000] #items shall be below one
+frequencies = [1/20., 1/100, 1/6] #items shall be below one
 amplitudes = [0.5, 1, 2]
-t = np.arange(200) #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-dt = 1
+t = np.arange(400) #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+sampling_dt = 1
 ##dt = 1/len(t)#len(sig)
-
 
 
 def create_signal(frequencies, amplitudes, t, noise = False, exp = False):
@@ -42,14 +41,7 @@ def create_signal(frequencies, amplitudes, t, noise = False, exp = False):
     
     return sig
     
-sig = create_signal(frequencies, amplitudes, t)
 
-
-#fft, ifft
-
-fft1d = fft(sig)
-
-nyquist = int(len(fft1d)/2.)
 
 def plot_signal_phase_fft():
     plt.rcParams['figure.figsize'] = [12, 7]
@@ -81,7 +73,7 @@ def plot_signal_phase_fft():
 
 
 
-def compute_wavelet():
+def pywt_compute_wavelets():
     #central_periods = int( np.where(fft1d == max(fft1d[0:nyquist]))[0]/2 )
 
     units = 1
@@ -99,38 +91,80 @@ def compute_wavelet():
                 scales=scales,
                 wavelet=wavelet,
                 sampling_period=1,
-                axis=0,
+                #axis=0,
             )
     return coeffs
 
 
-def amplitude_phase_wab(coef):
+
+def niko_compute_wavelets():
+
+    k0 = 6 #defines the size of the wavelet kernel, the bigger the smother, but eats up the edges of the data
+    wavelet = wa.MorletWavelet()
+    central_periods = 1./np.array(frequencies)
+    scales = (central_periods    * (1.0 / sampling_dt)) / wavelet.fourier_factor(k0)#(
+
+    waves = []
+    periods = []
+    wav_scales = []
+    cois = []
+    for s in scales:
+        wave, period, scale, coi = wa.continous_wavelet( 
+            sig, sampling_dt, pad=True, wavelet=wa.MorletWavelet(), dj =0,  s0 =s , j1 =0, k0=k0
+            )
+        waves.append(wave[0])
+        periods.append(period)
+        wav_scales.append(scale)
+        cois.append(coi)
+
+    return np.array(waves), periods, scales, cois
     
-    amp = np.abs(coef[0])#np.sqrt( coef[0].imag**2 + coef[0].real**2 )
-    phase = np.angle(coef[0])#np.arctan2( coef[0].imag, coef[0].real ) 
-    rec_signal = amp*np.cos(phase) #!!!!!!!!!!!!!!!!!!!!!!!!!"""
-    return amp, phase, rec_signal
 
-sampling_dt = 1.0
-k0 = 6
-wavelet = wa.MorletWavelet()
-central_period = 1./np.array(frequencies)
-scales = (central_period    * (1.0 / sampling_dt)) / wavelet.fourier_factor(k0)#(
-           # np.array(1.0/frequency)
-          #  * (1.0 / sampling_dt)/wavelet.fourier_factor(k0)
-       # )
+def amplitude_phase_wav(waves):
+    
+    amp = []
+    phase = []
+    for w in waves:
+        amp.append( np.abs(waves[0]) )#np.sqrt( coef[0].imag**2 + coef[0].real**2 )
+        phase.append(np.angle(waves[0]) )#np.arctan2( coef[0].imag, coef[0].real ) 
 
-wave, period, scale, coi = wa.continous_wavelet( 
-    sig, dt, pad=True, wavelet=wa.MorletWavelet(), dj =0,  s0 =scales[0] , j1 =0, k0=k0
-    )
-coeffs = compute_wavelet()
+    return amp, phase
 
-amp, phase, rec_signal = amplitude_phase_wab(coeffs)
-amp2, phase2, rec_signal2 = amplitude_phase_wab(wave)
+def wav_reconstructed_signal(waves):
+    
+    rec_signal = np.zeros(len(waves[0]))
 
-#print(wave[0])
+    #recosntruc signal  
+    for w in waves:
+        rec_signal += np.abs(w) * np.cos( np.angle(w) ) 
+   
+    #rescaling factor with linear regression
+    fit_x = np.vstack([rec_signal, np.ones((rec_signal.shape[0]))]).T
+    m, c = np.linalg.lstsq(fit_x, sig)[0]
+    
+    return m*rec_signal
 
-def plot_amplitude_phase_WL():
+
+def plot_waves_amplitude_phase_WL(title, sig, rec_sig, waves):
+    
+    fig, axs =  plt.subplots(nrows=3, ncols=len(waves), sharex=True, sharey="row", figsize=(15, 10))
+    fig.suptitle(title, fontsize=20)
+
+    axs[0, 0].set_ylabel("signal")
+    axs[1, 0].set_ylabel("ampitude")
+    axs[2, 0].set_ylabel("phase")
+    
+    for i in range(len(waves)):
+        axs[0, i].set_title(frequencies[i])
+        axs[0, i].plot(sig, label = 'original')
+        axs[0, i].plot(rec_sig, label = 'reconstructed')
+        axs[1, i].plot(np.real(waves[i, :]))
+        axs[1, i].plot(np.abs(waves[i, :]))
+        axs[2, i].plot(np.angle(waves[i, :]))
+    axs[0, 0].legend(loc='upper right', fontsize='small', frameon = False)
+ 
+
+def plot_comparison_methods(wav1, wav2):
     
     fig2, ax = plt.subplots(4,1)
     # plotting the amplitude
@@ -162,9 +196,27 @@ def plot_amplitude_phase_WL():
     ax[3].plot(rec_signal, color ='blue')
     ax[3].plot(rec_signal2, color ='red')
 
+#compute signal
+sig = create_signal(frequencies, amplitudes, t)
+
+#compute 1d fourier trasformation
+#fft, ifft
+fft1d = fft(sig)
+nyquist = int(len(fft1d)/2.)
+
+#compute wavelet decomposition for 2 different methods
+waves_pywt = pywt_compute_wavelets()
+waves_nico, periods, scales, cois = niko_compute_wavelets()
 
 
-#print(coeffs)
+rec_signal_pywt = wav_reconstructed_signal(waves_pywt)
+rec_signal_nico = wav_reconstructed_signal(waves_nico)
+#amp, phase = amplitude_phase_wav(coeffs)
+#amp2, phase2 = amplitude_phase_wav(waves)
+
+#plot signals and wavelets
 plot_signal_phase_fft()
-plot_amplitude_phase_WL()
+plot_waves_amplitude_phase_WL('python wavelet', sig, rec_signal_pywt, waves_pywt)
+plot_waves_amplitude_phase_WL('nico wavelet', sig, rec_signal_nico, waves_nico)
+#plot_amplitude_phase_WL()
 plt.show()
