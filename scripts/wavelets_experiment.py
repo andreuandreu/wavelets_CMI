@@ -312,8 +312,5 @@ rec_signal_niko = wav_reconstructed_signal(sig, waves_niko, no_amp=False, indivi
 plot_signal_phase_fft()
 plot_waves_amplitude_phase_WL('python wavelet', sig, rec_signal_pywt, waves_pywt, freq_bands_pywt )
 plot_waves_amplitude_phase_WL('niko wavelet', sig, rec_signal_niko, waves_niko, freq_bands_niko)
-
-
-
 #plot_comparison_methods()
 plt.show()
