@@ -1,3 +1,5 @@
+from numpy.core.numeric import base_repr
+from numpy.testing._private.utils import nulp_diff
 import pandas as pd
 import matplotlib.pyplot as plt
 import read_surrogate_data as rsd
@@ -16,12 +18,7 @@ name = '../../package_CMI_prague/data/exp_raw/binfiles/Rossler_bin_0.000.bin'
 #df.sort_index(inplace=True)
 #df = df.resample('W').last()
 #sig =  np.array(df['x'][0:1000])
-frequencies = [1/20., 1/100, 1/6] #items shall be below one
-amplitudes = [0.5, 1, 2]
-t = np.arange(400) #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-sampling_dt = 1
 
-##dt = 1/len(t)#len(sig)
 
 
 def create_signal(frequencies, amplitudes, t, noise = False, gauss = False):
@@ -42,14 +39,25 @@ def create_signal(frequencies, amplitudes, t, noise = False, gauss = False):
     if gauss: sig += sig_gauss
     
     return sig
+
+class wavelets_scaling:
+
+    def __init__(self, base, frequency_spacing, num_bands, fourier_factor):
+        self.base = base
+        self.frequency_spacing = frequency_spacing
+        self.num_bands = num_bands
+        self.fourier_factor = fourier_factor
+   
+
     
-def scales_fourier(wav_kernel, frequency_spacing = 0.001, num_bands = 4, fourier_factor = 0.25 ):
+def scales_fourier(wav_kernel, base = 2, frequency_spacing = 0.001, num_bands = 7, fourier_factor = 0.25 ):
     '''
     provides automatic scaling for wavelet spectral frequencies in log2 spacing 
     by using the last fourier mode as initial seed
     :param wav_kernel: provide the wavelet kernel in order to set the scale
     :param *kwargs:
-        frequency_spacing: the spacing in log 2 scale between frequency bands
+        base: the base over which scan the frequency bands, the bigger, the more spread the bands are
+        frequency_spacing: the added spacing in log base scale between frequency bands
         num_bands: number of scales minus one do the spectral decomposition; 
                    ranges form s0  to  s0 * 2^(num_bands+dj)
         fourier_factor: a multiplicative factor for the seed mode, recommended to be 1/4 
@@ -60,7 +68,7 @@ def scales_fourier(wav_kernel, frequency_spacing = 0.001, num_bands = 4, fourier
     s0 = (fourier_factor * aux * ( 1.0 / sampling_dt)) / wav_kernel # 
     #int(np.where(fft1d == max(fft1d[0:nyquist]))[0]/2 )/len(t))
     for i in range(num_bands):
-        scales.append(  s0 * 2**((num_bands-i)+frequency_spacing) )
+        scales.append(  s0 * base**((num_bands-i)+frequency_spacing) )
     
     return scales
 
@@ -86,7 +94,7 @@ def pywt_compute_wavelets(freq = True):
                 sampling_period=1,
                 #axis=0,
             )
-    return coeffs
+    return coeffs, 1./np.array(scales)
 
 
 
@@ -114,7 +122,7 @@ def niko_compute_wavelets(freq = True):
         wav_scales.append(scale)
         cois.append(coi)
     
-    return np.array(waves), periods, scales, cois
+    return np.array(waves), periods, 1./np.array(scales), cois
     
 
 def amplitude_phase_wav(waves):
@@ -200,11 +208,14 @@ def plot_signal_phase_fft():
     #ax[2].loglog(fft1d[0:nyquist], 'r')
     ax[2].plot(freq_specrum, fft1d/len(t) )
     ax[2].scatter(frequencies, np.ones( len(frequencies) ) )
+    ax2 = ax[2].twiny()
+    ax2.semilogx(len(t)/freq_specrum**2, fft1d/len(t), c='r')
+    ax2.set_xlabel('wavenum', color='r')
     #ax[2].loglog(frequencies, 'b')
 
-def plot_waves_amplitude_phase_WL(title, sig, rec_sig, waves, frequencies, wav_kernel = False):
+def plot_waves_amplitude_phase_WL(title, sig, rec_sig, waves, frequencies):
     
-    fig, axs =  plt.subplots(nrows=3, ncols=len(waves), sharex=True, sharey="row", figsize=(15, 10))
+    fig, axs =  plt.subplots(nrows=3, ncols=len(waves),  sharey="row", figsize=(15, 10))#sharex=True,
     fig.suptitle(title, fontsize=20)
 
     axs[0, 0].set_ylabel("signal")
@@ -212,11 +223,9 @@ def plot_waves_amplitude_phase_WL(title, sig, rec_sig, waves, frequencies, wav_k
     axs[2, 0].set_ylabel("phase")
     
     for i in range(len(waves)):
-        if len(waves) == len(frequencies): axs[0, i].set_title(frequencies[i])
-        elif wav_kernel: axs[0, i].set_title(scales_fourier(wav_kernel)[i])
-        else: print('we are not feeding me well')
-        axs[0, i].plot(sig, label = 'original')
-        axs[0, i].plot(rec_sig, label = 'reconstructed')
+        axs[0, i].set_title(' F  {0:.2f}  P {1:.2f}'.format(frequencies[i], 1./frequencies[i]) )
+        axs[0, i].plot(sig[0: int( len(waves[i])/(i+1) ) ], label = 'original')
+        axs[0, i].plot(rec_sig[0: int( len(waves[i])/(i+1) ) ], label = 'reconstructed')
         axs[1, i].plot(np.real(waves[i, :]))
         axs[1, i].plot(np.abs(waves[i, :]))
         axs[2, i].plot(np.angle(waves[i, :]))
@@ -273,27 +282,38 @@ def FFT(t, sig):
     Y = abs(fft(sig))[:k]
     return (freq_escale, Y)
 
-#compute signal
-sig = create_signal(frequencies, amplitudes, t )#, gauss = True
-#compute 1d fourier trasformation
+
+
+'''compute signal'''
+frequencies = [ 1/20., 1/100, 1/6] #freq, they shall be below one
+amplitudes = [0.5, 1, 2]
+t = np.arange(600) 
+sampling_dt = 1
+
+sig = create_signal(frequencies, amplitudes, t, gauss = False )#
+
+
+'''compute 1d fourier transformation'''
 #fft, ifft
 freq_specrum, fft1d = FFT(t, sig)#fft(sig)/len(t)
-nyquist = int(len(fft1d)/2.)
+nyquist = int(len(fft1d))
 
-#compute wavelet decomposition for 2 different methods
-waves_pywt = pywt_compute_wavelets( freq = True )
-waves_nico, periods, scales, cois = niko_compute_wavelets(freq = True)
+'''compute wavelet decomposition for 2 different methods'''
+waves_pywt, freq_bands_pywt = pywt_compute_wavelets( freq = False )
+waves_niko, periods, freq_bands_niko, cois = niko_compute_wavelets(freq = False)
 
-#reconstruct the singnal form the 
+'''reconstruct the signal form the wavelets'''
 rec_signal_pywt = wav_reconstructed_signal(sig, waves_pywt, no_amp=False, individual_amp=True)
-rec_signal_nico = wav_reconstructed_signal(sig, waves_nico, no_amp=False, individual_amp=True)
+rec_signal_niko = wav_reconstructed_signal(sig, waves_niko, no_amp=False, individual_amp=True)
 #amp, phase = amplitude_phase_wav(coeffs)
 #amp2, phase2 = amplitude_phase_wav(waves)
 
-#plot signals and wavelets
+'''plot signals and wavelets'''
 plot_signal_phase_fft()
-plot_waves_amplitude_phase_WL('python wavelet', sig, rec_signal_pywt, waves_pywt, frequencies )
-plot_waves_amplitude_phase_WL('nico wavelet', sig, rec_signal_nico, waves_nico, frequencies)
+plot_waves_amplitude_phase_WL('python wavelet', sig, rec_signal_pywt, waves_pywt, freq_bands_pywt )
+plot_waves_amplitude_phase_WL('niko wavelet', sig, rec_signal_niko, waves_niko, freq_bands_niko)
+
+
 
 #plot_comparison_methods()
 plt.show()
