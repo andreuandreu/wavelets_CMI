@@ -18,14 +18,6 @@ name = '../../package_CMI_prague/data/exp_raw/binfiles/Rossler_bin_0.000.bin'
 #df.sort_index(inplace=True)
 #df = df.resample('W').last()
 #sig =  np.array(df['x'][0:1000])
-<<<<<<< HEAD
-frequencies = [1/10., 1/100] #items shall be below one
-amplitudes = [0.5, 1]
-t = np.arange(660) #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-dt = 1
-##dt = 1/len(t)#len(sig)
-=======
->>>>>>> 9d76f8115c127ce171687f565a68711b44df50ec
 
 
 
@@ -58,9 +50,6 @@ class wavelets_scaling:
    
 
     
-<<<<<<< HEAD
-sig = create_signal(frequencies, amplitudes, t, noise = True)
-=======
 def scales_fourier(wav_kernel, base = 2, frequency_spacing = 0.001, num_bands = 7, fourier_factor = 0.25 ):
     '''
     provides automatic scaling for wavelet spectral frequencies in log2 spacing 
@@ -82,7 +71,6 @@ def scales_fourier(wav_kernel, base = 2, frequency_spacing = 0.001, num_bands = 
         scales.append(  s0 * base**((num_bands-i)+frequency_spacing) )
     
     return scales
->>>>>>> 9d76f8115c127ce171687f565a68711b44df50ec
 
 def pywt_compute_wavelets(freq = True):
     
@@ -217,63 +205,6 @@ def plot_signal_phase_fft():
 
     # plotting the fft of the signal 
     ax[2].set_title("fft Spectrum of the Signal")
-<<<<<<< HEAD
-    ax[2].plot(fft1d[0:nyquist], 'r')
-
-   
-def compute_wavelet():
-    #central_periods = int( np.where(fft1d == max(fft1d[0:nyquist]))[0]/2 )
-    units = 1
-    wavelet = 'cmor1.5-1.0'
-    scales = (
-                np.array(1./np.array(frequencies))
-                * (1.0 / sampling_dt)
-                * pywt.central_frequency(wavelet)
-            )
-    #scales = int(central_periods)
-
-    padded_data =  sig
-    coeffs, _ = pywt.cwt(
-                padded_data,
-                scales=scales,
-                wavelet=wavelet,
-                sampling_period=1,
-                axis=0,
-            )
-    return coeffs
-
-
-def amplitude_phase_wab(coef):
-    rec_signal = np.zeros(len(coef[0]))
-    amp = []
-    phase = []
-    
-    for i, c in enumerate(coef):
-        amp.append(np.abs(c))     #np.sqrt( coef[0].imag**2 + coef[0].real**2 )
-        phase.append(np.angle(c)) #np.arctan2( coef[0].imag, coef[0].real ) 
-        rec_signal += amp[i]*np.cos(phase[i]) #!!!!!!!!!!!!!!!!!!!!!!!!!"""
-    
-    return amp, phase, rec_signal
-
-sampling_dt = 1.0
-k0 = 6
-wavelet = wa.MorletWavelet()
-central_period = 1./(np.array(frequencies))
-scales = (central_period    * (1.0 / sampling_dt)) / wavelet.fourier_factor(k0)#(
-           # np.array(1.0/frequency)
-          #  * (1.0 / sampling_dt)/wavelet.fourier_factor(k0)
-       # )
-
-wave, period, scale, coi = wa.continous_wavelet( 
-    sig, dt, pad=True, wavelet=wa.MorletWavelet(), dj =0,  s0 =scales[0] , j1 =0, k0=k0
-    )
-coeffs = compute_wavelet()
-print (coeffs.shape, 'shape coeff')
-amp, phase, rec_signal = amplitude_phase_wab(coeffs)
-amp2, phase2, rec_signal2 = amplitude_phase_wab(wave)
-
-#print(wave[0])
-=======
     #ax[2].loglog(fft1d[0:nyquist], 'r')
     ax[2].plot(freq_specrum, fft1d/len(t) )
     ax[2].scatter(frequencies, np.ones( len(frequencies) ) )
@@ -300,7 +231,6 @@ def plot_waves_amplitude_phase_WL(title, sig, rec_sig, waves, frequencies):
         axs[2, i].plot(np.angle(waves[i, :]))
     axs[0, 0].legend(loc='upper right', fontsize='small', frameon = False)
  
->>>>>>> 9d76f8115c127ce171687f565a68711b44df50ec
 
 def plot_comparison_methods(wav1, wav2):
     
@@ -335,50 +265,6 @@ def plot_comparison_methods(wav1, wav2):
     ax[3].plot(rec_signal2, color ='red')
 
 
-<<<<<<< HEAD
-def plot_one_amplitude_phase_WL(coef,  amp, phase, rec_signal2):
-    
-    fig2, ax = plt.subplots(4,1)
-    # plotting the amplitude
-    ymax = max(coeffs[0][20:-20]) + 0.3*max(coeffs[0][20:-20])
-    #ax[0].set_ylim( -ymax, ymax   )
-    ax[0].set_title("real im wavelets")
-    ax[0].plot(coef.real)
-    ax[0].plot(coef.imag)
-
-    # plotting the phase
-    ax[1].set_xlim(20,180)
-    ax[1].set_title(" phase whavelets")
- 
-    ax[1].plot(phase)
-
-    # plotting the amp
-    ax[2].set_title("amp whavelets")
-    ax[2].plot(amp)
-
-    # plotting the reconstruction
-    ax[3].set_xlim(20,180)
-    ax[3].plot(sig, color ='green')
-    ax[3].plot(rec_signal, color ='blue')
-
-def plot_sig_amp_phase(sig, wave):
-    _, axs =  plt.subplots(nrows=4, ncols=2, sharex=True, sharey="row", figsize=(15, 10))
-    
-    axs[0, 0].set_ylabel("signal")
-    axs[1, 0].set_ylabel("Re[wave]")
-    axs[2, 0].set_ylabel("phase")
-    axs[3, 0].set_ylabel("amplitude")
-    
-    print ('wave, shape', wave.shape)
-    for i in range(wave.shape[0]):
-        axs[0, i].set_title(period[i])
-        axs[0, i].plot(sig)
-        axs[1, i].plot(np.real(wave[i, :]))
-        axs[2, i].plot(np.angle(wave[i, :]))
-        axs[3, i].plot(np.abs(wave[i, :]))
-
-
-=======
 def FFT(t, sig):
     '''
     compute the fast fourier transform and the frequency scale of the transform
@@ -421,18 +307,10 @@ rec_signal_pywt = wav_reconstructed_signal(sig, waves_pywt, no_amp=False, indivi
 rec_signal_niko = wav_reconstructed_signal(sig, waves_niko, no_amp=False, individual_amp=True)
 #amp, phase = amplitude_phase_wav(coeffs)
 #amp2, phase2 = amplitude_phase_wav(waves)
->>>>>>> 9d76f8115c127ce171687f565a68711b44df50ec
 
 '''plot signals and wavelets'''
 plot_signal_phase_fft()
-<<<<<<< HEAD
-#plot_sig_amp_phase(sig, wave)
-plot_one_amplitude_phase_WL(coeffs[0], amp[0], phase[0], rec_signal)
-plot_one_amplitude_phase_WL(coeffs[1], amp[1], phase[1], rec_signal)
-plot_one_amplitude_phase_WL(wave[0], np.abs(wave[0, :]), np.angle(wave[0, :]), rec_signal2)
-=======
 plot_waves_amplitude_phase_WL('python wavelet', sig, rec_signal_pywt, waves_pywt, freq_bands_pywt )
 plot_waves_amplitude_phase_WL('niko wavelet', sig, rec_signal_niko, waves_niko, freq_bands_niko)
 #plot_comparison_methods()
->>>>>>> 9d76f8115c127ce171687f565a68711b44df50ec
 plt.show()
