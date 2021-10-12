@@ -15,9 +15,9 @@ name = '../../package_CMI_prague/data/exp_raw/binfiles/Rossler_bin_0.000.bin'
 #df.sort_index(inplace=True)
 #df = df.resample('W').last()
 #sig =  np.array(df['x'][0:1000])
-frequencies = [1/10., 1/100, 1/1000] #items shall be below one
-amplitudes = [0.5, 1, 2]
-t = np.arange(200) #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+frequencies = [1/10., 1/100] #items shall be below one
+amplitudes = [0.5, 1]
+t = np.arange(660) #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 dt = 1
 ##dt = 1/len(t)#len(sig)
 
@@ -42,7 +42,7 @@ def create_signal(frequencies, amplitudes, t, noise = False, exp = False):
     
     return sig
     
-sig = create_signal(frequencies, amplitudes, t)
+sig = create_signal(frequencies, amplitudes, t, noise = True)
 
 
 #fft, ifft
@@ -70,20 +70,9 @@ def plot_signal_phase_fft():
     ax[2].set_title("fft Spectrum of the Signal")
     ax[2].plot(fft1d[0:nyquist], 'r')
 
-    #ploting the wavelwet transform
-    #ax[2].pcolormesh(t, freq, np.abs(cwtmatr), cmap='viridis', shading='gouraud')
-    #ax[2].imshow(cwtmatr, extent=[-1, 1, 1, 31], cmap='PRGn', aspect='auto',
-    #            vmax=abs(cwtmatr).max(), vmin=-abs(cwtmatr).max())
- 
-
-
-#phase  = np.arctan()
-
-
-
+   
 def compute_wavelet():
     #central_periods = int( np.where(fft1d == max(fft1d[0:nyquist]))[0]/2 )
-
     units = 1
     wavelet = 'cmor1.5-1.0'
     scales = (
@@ -92,7 +81,7 @@ def compute_wavelet():
                 * pywt.central_frequency(wavelet)
             )
     #scales = int(central_periods)
-    #scales = central_periods
+
     padded_data =  sig
     coeffs, _ = pywt.cwt(
                 padded_data,
@@ -105,16 +94,21 @@ def compute_wavelet():
 
 
 def amplitude_phase_wab(coef):
+    rec_signal = np.zeros(len(coef[0]))
+    amp = []
+    phase = []
     
-    amp = np.abs(coef[0])#np.sqrt( coef[0].imag**2 + coef[0].real**2 )
-    phase = np.angle(coef[0])#np.arctan2( coef[0].imag, coef[0].real ) 
-    rec_signal = amp*np.cos(phase) #!!!!!!!!!!!!!!!!!!!!!!!!!"""
+    for i, c in enumerate(coef):
+        amp.append(np.abs(c))     #np.sqrt( coef[0].imag**2 + coef[0].real**2 )
+        phase.append(np.angle(c)) #np.arctan2( coef[0].imag, coef[0].real ) 
+        rec_signal += amp[i]*np.cos(phase[i]) #!!!!!!!!!!!!!!!!!!!!!!!!!"""
+    
     return amp, phase, rec_signal
 
 sampling_dt = 1.0
 k0 = 6
 wavelet = wa.MorletWavelet()
-central_period = 1./np.array(frequencies)
+central_period = 1./(np.array(frequencies))
 scales = (central_period    * (1.0 / sampling_dt)) / wavelet.fourier_factor(k0)#(
            # np.array(1.0/frequency)
           #  * (1.0 / sampling_dt)/wavelet.fourier_factor(k0)
@@ -124,7 +118,7 @@ wave, period, scale, coi = wa.continous_wavelet(
     sig, dt, pad=True, wavelet=wa.MorletWavelet(), dj =0,  s0 =scales[0] , j1 =0, k0=k0
     )
 coeffs = compute_wavelet()
-
+print (coeffs.shape, 'shape coeff')
 amp, phase, rec_signal = amplitude_phase_wab(coeffs)
 amp2, phase2, rec_signal2 = amplitude_phase_wab(wave)
 
@@ -163,8 +157,53 @@ def plot_amplitude_phase_WL():
     ax[3].plot(rec_signal2, color ='red')
 
 
+def plot_one_amplitude_phase_WL(coef,  amp, phase, rec_signal2):
+    
+    fig2, ax = plt.subplots(4,1)
+    # plotting the amplitude
+    ymax = max(coeffs[0][20:-20]) + 0.3*max(coeffs[0][20:-20])
+    #ax[0].set_ylim( -ymax, ymax   )
+    ax[0].set_title("real im wavelets")
+    ax[0].plot(coef.real)
+    ax[0].plot(coef.imag)
+
+    # plotting the phase
+    ax[1].set_xlim(20,180)
+    ax[1].set_title(" phase whavelets")
+ 
+    ax[1].plot(phase)
+
+    # plotting the amp
+    ax[2].set_title("amp whavelets")
+    ax[2].plot(amp)
+
+    # plotting the reconstruction
+    ax[3].set_xlim(20,180)
+    ax[3].plot(sig, color ='green')
+    ax[3].plot(rec_signal, color ='blue')
+
+def plot_sig_amp_phase(sig, wave):
+    _, axs =  plt.subplots(nrows=4, ncols=2, sharex=True, sharey="row", figsize=(15, 10))
+    
+    axs[0, 0].set_ylabel("signal")
+    axs[1, 0].set_ylabel("Re[wave]")
+    axs[2, 0].set_ylabel("phase")
+    axs[3, 0].set_ylabel("amplitude")
+    
+    print ('wave, shape', wave.shape)
+    for i in range(wave.shape[0]):
+        axs[0, i].set_title(period[i])
+        axs[0, i].plot(sig)
+        axs[1, i].plot(np.real(wave[i, :]))
+        axs[2, i].plot(np.angle(wave[i, :]))
+        axs[3, i].plot(np.abs(wave[i, :]))
+
+
 
 #print(coeffs)
 plot_signal_phase_fft()
-plot_amplitude_phase_WL()
+#plot_sig_amp_phase(sig, wave)
+plot_one_amplitude_phase_WL(coeffs[0], amp[0], phase[0], rec_signal)
+plot_one_amplitude_phase_WL(coeffs[1], amp[1], phase[1], rec_signal)
+plot_one_amplitude_phase_WL(wave[0], np.abs(wave[0, :]), np.angle(wave[0, :]), rec_signal2)
 plt.show()
