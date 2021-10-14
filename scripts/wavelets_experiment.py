@@ -50,7 +50,7 @@ class wavelets_scaling:
    
 
     
-def scales_fourier(wav_kernel, base = 2, frequency_spacing = 0.001, num_bands = 7, fourier_factor = 0.25 ):
+def scales_fourier(wav_kernel, base = 2, frequency_spacing = 0.001, num_bands = 4, fourier_factor = 0.25 ):
     '''
     provides automatic scaling for wavelet spectral frequencies in log2 spacing 
     by using the last fourier mode as initial seed
@@ -203,15 +203,21 @@ def plot_signal_phase_fft():
     ax[1].set_title("Phase Spectrum of the Signal")
     ax[1].phase_spectrum(sig, color ='green')
 
-    # plotting the fft of the signal 
+    # plotting the fft of the signal in frequency domain
     ax[2].set_title("fft Spectrum of the Signal")
     #ax[2].loglog(fft1d[0:nyquist], 'r')
     ax[2].plot(freq_specrum, fft1d/len(t) )
     ax[2].scatter(frequencies, np.ones( len(frequencies) ) )
+    
+    # plotting the fft of the signal in scale/length domain and log scale
     ax2 = ax[2].twiny()
-    ax2.semilogx(len(t)/freq_specrum**2, fft1d/len(t), c='r')
+    ax2.plot(1./freq_specrum, fft1d/len(t), c='r')
+    ax2.scatter(1./np.array(freq_bands_niko), np.ones( len(freq_bands_niko) ), c='r') 
+    #ax2.semilogx(len(t)/freq_specrum**2, fft1d/len(t), c='r')
+    ax2.set_xscale('log')
     ax2.set_xlabel('wavenum', color='r')
     #ax[2].loglog(frequencies, 'b')
+    plt.tight_layout()
 
 def plot_waves_amplitude_phase_WL(title, sig, rec_sig, waves, frequencies):
     
@@ -230,7 +236,7 @@ def plot_waves_amplitude_phase_WL(title, sig, rec_sig, waves, frequencies):
         axs[1, i].plot(np.abs(waves[i, :]))
         axs[2, i].plot(np.angle(waves[i, :]))
     axs[0, 0].legend(loc='upper right', fontsize='small', frameon = False)
- 
+    
 
 def plot_comparison_methods(wav1, wav2):
     
@@ -299,8 +305,8 @@ freq_specrum, fft1d = FFT(t, sig)#fft(sig)/len(t)
 nyquist = int(len(fft1d))
 
 '''compute wavelet decomposition for 2 different methods'''
-waves_pywt, freq_bands_pywt = pywt_compute_wavelets( freq = False )
-waves_niko, periods, freq_bands_niko, cois = niko_compute_wavelets(freq = False)
+waves_pywt, freq_bands_pywt = pywt_compute_wavelets( freq = True )
+waves_niko, periods, freq_bands_niko, cois = niko_compute_wavelets(freq = True)
 
 '''reconstruct the signal form the wavelets'''
 rec_signal_pywt = wav_reconstructed_signal(sig, waves_pywt, no_amp=False, individual_amp=True)
@@ -310,7 +316,7 @@ rec_signal_niko = wav_reconstructed_signal(sig, waves_niko, no_amp=False, indivi
 
 '''plot signals and wavelets'''
 plot_signal_phase_fft()
-plot_waves_amplitude_phase_WL('python wavelet', sig, rec_signal_pywt, waves_pywt, freq_bands_pywt )
-plot_waves_amplitude_phase_WL('niko wavelet', sig, rec_signal_niko, waves_niko, freq_bands_niko)
+#plot_waves_amplitude_phase_WL('python wavelet', sig, rec_signal_pywt, waves_pywt, freq_bands_pywt )
+#plot_waves_amplitude_phase_WL('niko wavelet', sig, rec_signal_niko, waves_niko, freq_bands_niko)
 #plot_comparison_methods()
 plt.show()
