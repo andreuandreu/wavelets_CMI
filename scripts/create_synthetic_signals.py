@@ -10,9 +10,14 @@ from scipy import signal
 
 
 def create_signal(frequencies, amplitudes, t, noise = False, gauss = False):
-    ''' return signals as the sum of cosines of different frequencies
+    ''' 
+    return  a signal as the sum of cosines of different frequencies and corresponding amplitudes provided
     
-    noise or exponential delay can be added default is no'''
+    :param *kwargs:
+        noise: if true noise is added, default is False
+        gauss: if true a gaussian in the central period is added, default is False
+        
+    '''
     
     sig_cos = []
     sig_gauss =  10*np.real(np.exp(-0.001*(t-len(t)/2)**2))#*np.exp(1j*2*np.pi*2*(t-0.4)))
@@ -92,7 +97,10 @@ def create_victor_signal(num_segments,  base_length, amp_min = 10,  factor = 0.0
         '''
         Impose directionality, delay one signal X units respect to the other
         
-        :param delay: delay in system units
+        :param *kwargs:
+            delay: delay in system units
+            white: sum white noise to the signal
+            pink: sum pink noise to the signal
         '''
 
         end = len(sig_ph) - 1 
@@ -126,15 +134,15 @@ def create_victor_signal(num_segments,  base_length, amp_min = 10,  factor = 0.0
 
 
 '''compute sinusoidal signal'''
-frequencies = [ 1/20., 1/100, 1/6] #freq, they shall be below one
-amplitudes = [0.5, 1, 2]
-t = np.arange(600) 
-sampling_dt = 1
+#frequencies = [ 1/20., 1/100, 1/6] #freq, they shall be below one
+#amplitudes = [0.5, 1, 2]
+#t = np.arange(600) 
+#sampling_dt = 1
 
 #sig = create_signal(frequencies, amplitudes, t, gauss = False )#
 
 '''compute delay signal'''
-num_segments = 3
-base_length = 200
+#num_segments = 3
+#base_length = 200
 
-create_victor_signal(num_segments,  base_length)
+#create_victor_signal(num_segments,  base_length)

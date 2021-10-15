@@ -13,40 +13,32 @@ import create_synthetic_signals as css
 
 
 '''
-Functions to decompose a signal into its component continous wavelets and reconstruct it
-
-- 1st provide signal
-- 2nd 
+Functions to decompose a signal into its component continuos wavelets and reconstruct it
 
 
+- 1st provide a univaluated signal, chose one function from the create_synthetic_signals script
 
+- 2nd do the fast fourier transfrom of the signal using the FFT(t, sig) function
 
+- 3rd compute wavelet decomposition for one or both provided methods
+    niko_compute_wavelets(freq = True)
+    pywt_compute_wavelets(freq = True)
+    if frequency is true, then the decomposition would be around the provided list of frequencies
+    otherwise it will compute a discrete set of frequencies in base 2 to decompose
+    in this case one has to initialize the values of the desired intervals into the wavelets_scaling class
 
+- 4th reconstruct the signal using function  wav_reconstructed_signal(sig, waves_pywt, no_amp=False, individual_amp=True)
+    here 3 methods of reconstruction can be probided that rescale the amplitudes, 
+        no_amplitude: does not rescale
+        global_amp: rescales the sum of the wavelets to the amplitude of the signal
+        individual_amp: rescales each wavelet to the amplitude of the signal
+
+- 5th plots
+        plot_signal_phase_fft(): signal + phase transform + FFt in frequency and wavenumber domain
+        plot_waves_amplitude_phase_WL(): reconstruction of the signal and each wavelet (phase and amplitude) corresponding to the provided frequency
+        plot_comparison_methods(): to compare the wavelets and reconstructions of two different wavelet methods ->in development<-   
 '''
 
-
-
-
-
-
-def create_signal(frequencies, amplitudes, t, noise = False, gauss = False):
-    ''' return signals as the sum of cosines of different frequencies
-    
-    noise or exponential delay can be added default is no'''
-    
-    sig_cos = []
-    sig_gauss =  10*np.real(np.exp(-0.001*(t-len(t)/2)**2))#*np.exp(1j*2*np.pi*2*(t-0.4)))
-    sig_noise = np.random.normal(0,0.1, size=(len(t)))
-    sig = np.zeros(len(t))
-
-    for i, f in enumerate(frequencies):
-        sig_cos.append( np.cos( 2*np.pi * f * t) )  #+ signal.gausspulse(t - 0.4, fc=2)
-        sig += amplitudes[i]*sig_cos[i]
-    
-    if noise: sig += sig_noise
-    if gauss: sig += sig_gauss
-    
-    return sig
 
 class wavelets_scaling:
 
@@ -149,11 +141,11 @@ def wav_reconstructed_signal(sig, waves, no_amp = True, individual_amp = False, 
     reconstructs the signal in three possible ways, no reescale, rescaling the whole signal, recale individual amplitudes
     
     :param waves: the wavelets that the signal has been decomposed into
-    :param **kargs: 
-        :no_amplitude: DEFAULT do not reescale the amplitude of the signal, 
-                    if one of the other kargs is made True this shall be false
-        :individual_amp: if true, reescale each amplitude of each wavelet and then multiply them to reconstruct
-        :global_amp: reescale teh whole reconstructed signal to have the same amplitude as the original
+    :param **kwargs: 
+        :no_amplitude: DEFAULT do not rescale the amplitude of the signal, 
+                    if one of the other kwargs is made True this shall be false
+        :individual_amp: if true, rescale each amplitude of each wavelet and then multiply them to reconstruct
+        :global_amp: rescale teh whole reconstructed signal to have the same amplitude as the original
     :return: reconstructed signal
     '''
     
@@ -324,7 +316,7 @@ rec_signal_niko = wav_reconstructed_signal(sig, waves_niko, no_amp=False, indivi
 
 '''plot signals and wavelets'''
 plot_signal_phase_fft()
-#plot_waves_amplitude_phase_WL('python wavelet', sig, rec_signal_pywt, waves_pywt, freq_bands_pywt )
-#plot_waves_amplitude_phase_WL('niko wavelet', sig, rec_signal_niko, waves_niko, freq_bands_niko)
+plot_waves_amplitude_phase_WL('python wavelet', sig, rec_signal_pywt, waves_pywt, freq_bands_pywt )
+plot_waves_amplitude_phase_WL('niko wavelet', sig, rec_signal_niko, waves_niko, freq_bands_niko)
 #plot_comparison_methods()
 plt.show()
