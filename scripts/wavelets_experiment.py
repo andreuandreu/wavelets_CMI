@@ -3,22 +3,29 @@ from numpy.testing._private.utils import nulp_diff
 import pandas as pd
 import matplotlib.pyplot as plt
 import read_surrogate_data as rsd
-import generate_colored_noises as gcn
+
 import wavelet_analysis as wa
 import numpy as np
 from numpy.fft import fft, ifft
 import pywt
 from scipy import signal
+import create_synthetic_signals as css
 
 
-name = '../../package_CMI_prague/data/exp_raw/binfiles/Rossler_bin_0.000.bin'
+'''
+Functions to decompose a signal into its component continous wavelets and reconstruct it
+
+- 1st provide signal
+- 2nd 
 
 
-#df = pd.read_csv('EURUSD.csv',sep='\t', index_col='Date')
-#df = rsd.read_bin_bin_dataframe(name)
-#df.sort_index(inplace=True)
-#df = df.resample('W').last()
-#sig =  np.array(df['x'][0:1000])
+
+
+
+'''
+
+
+
 
 
 
@@ -297,7 +304,7 @@ amplitudes = [0.5, 1, 2]
 t = np.arange(600) 
 sampling_dt = 1
 
-sig = create_signal(frequencies, amplitudes, t, gauss = False )#
+sig = css.create_signal(frequencies, amplitudes, t, gauss = False )#
 
 
 '''compute 1d fourier transformation'''
