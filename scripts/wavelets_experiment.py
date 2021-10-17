@@ -41,8 +41,17 @@ Functions to decompose a signal into its component continuos wavelets and recons
 
 
 class wavelets_scaling:
+    '''
+    Initialize the parameters to be fed in the "automatic" band selection for the wavelet decomposition in 
+    regular bands.
 
-    def __init__(self, base, frequency_spacing, num_bands, fourier_factor):
+    :param base: the base over which scan the frequency bands, the bigger, the more spread the bands are
+    :param frequency_spacing: the added spacing in log base scale between frequency bands
+    :param num_bands: number of scales minus one do the spectral decomposition; 
+                   ranges form s0  to  s0 * 2^(num_bands+dj)
+    :param fourier_factor: a multiplicative factor for the seed mode, recommended to be 1/4 
+    '''
+    def __init__(self, base = 2, frequency_spacing = 0.001, num_bands = 4, fourier_factor = 0.25):
         self.base = base
         self.frequency_spacing = frequency_spacing
         self.num_bands = num_bands
@@ -50,29 +59,26 @@ class wavelets_scaling:
    
 
     
-def scales_fourier(wav_kernel, base = 3, frequency_spacing = 0.001, num_bands = 4, fourier_factor = 0.25 ):
+def scales_fourier(wav_kernel, par ): #base = 3, frequency_spacing = 0.001, num_bands = 4, fourier_factor = 0.25
     '''
     provides automatic scaling for wavelet spectral frequencies in log2 spacing 
     by using the last fourier mode as initial seed
     :param wav_kernel: provide the wavelet kernel in order to set the scale
-    :param *kwargs:
-        base: the base over which scan the frequency bands, the bigger, the more spread the bands are
-        frequency_spacing: the added spacing in log base scale between frequency bands
-        num_bands: number of scales minus one do the spectral decomposition; 
-                   ranges form s0  to  s0 * 2^(num_bands+dj)
-        fourier_factor: a multiplicative factor for the seed mode, recommended to be 1/4 
+    :param par: class containing the parameters to be used (base, frequency_spacing, num_bands_ fourier_factor)
+    :type par: class with self initializing parameter values
     '''
     
+    print(par.frequency_spacing, par.base, par.num_bands)
     scales = []
     aux = 1/freq_specrum[  np.where(fft1d/len(t) > 0.05)[0][-1] ] #last frequency of  the highest fourier mode    
-    s0 = (fourier_factor * aux * ( 1.0 / sampling_dt)) / wav_kernel # 
+    s0 = (par.fourier_factor * aux * ( 1.0 / sampling_dt)) / wav_kernel # 
     #int(np.where(fft1d == max(fft1d[0:nyquist]))[0]/2 )/len(t))
-    for i in range(num_bands):
-        scales.append(  s0 * base**((num_bands-i)+frequency_spacing) )
+    for i in range(par.num_bands):
+        scales.append(  s0 * par.base**((par.num_bands-i)+par.frequency_spacing) )
     
     return scales
 
-def pywt_compute_wavelets(freq = True):
+def pywt_compute_wavelets(freq = True, par_scales =  wavelets_scaling ):
     
     wavelet = 'cmor1.5-1.0' #kind of wavelet kernel
     if freq:
@@ -81,7 +87,7 @@ def pywt_compute_wavelets(freq = True):
             * (1.0 / sampling_dt)
             * pywt.central_frequency(wavelet)
         )
-    else: scales = scales_fourier(pywt.central_frequency(wavelet))
+    else: scales = scales_fourier( pywt.central_frequency(wavelet), par_scales)
     
 
     #scales = int(central_periods)
@@ -98,14 +104,14 @@ def pywt_compute_wavelets(freq = True):
 
 
 
-def niko_compute_wavelets(freq = True):
+def niko_compute_wavelets(freq = True, par_scales = wavelets_scaling):
 
     k0 = 6 #defines the size of the wavelet kernel, the bigger the smother, but eats up the edges of the data
     wavelet = wa.MorletWavelet()
     central_periods = 1./np.array(frequencies)
     
     if freq: scales = (central_periods * (1.0 / sampling_dt)) / wavelet.fourier_factor(k0)#(
-    else: scales = scales_fourier(wavelet.fourier_factor(k0))
+    else: scales = scales_fourier(wavelet.fourier_factor(k0), par_scales)
         
     
     waves = []
@@ -296,11 +302,8 @@ amplitudes = [0.5, 1, 2]
 t = np.arange(600) 
 sampling_dt = 1
 
-<<<<<<< HEAD
-sig = create_signal(frequencies, amplitudes, t, gauss = True )#
-=======
 sig = css.create_signal(frequencies, amplitudes, t, gauss = False )#
->>>>>>> 6f02a36dd949b98505895e43281359d780a06761
+
 
 
 '''compute 1d fourier transformation'''
@@ -309,18 +312,20 @@ freq_specrum, fft1d = FFT(t, sig)#fft(sig)/len(t)
 nyquist = int(len(fft1d))
 
 '''compute wavelet decomposition for 2 different methods'''
-waves_pywt, freq_bands_pywt = pywt_compute_wavelets( freq = False )
-waves_niko, periods, freq_bands_niko, cois = niko_compute_wavelets(freq = False)
+bands_par = wavelets_scaling(num_bands=6)
+waves_pywt, freq_bands_pywt = pywt_compute_wavelets( freq = False, par_scales = bands_par )
+waves_niko, periods, freq_bands_niko, cois = niko_compute_wavelets(freq = False, par_scales =  bands_par)
 
 '''reconstruct the signal form the wavelets'''
-rec_signal_pywt = wav_reconstructed_signal(sig, waves_pywt, no_amp=False, individual_amp=True)
-rec_signal_niko = wav_reconstructed_signal(sig, waves_niko, no_amp=False, individual_amp=True)
+
+#rec_signal_pywt = wav_reconstructed_signal(sig, waves_pywt, no_amp=False, individual_amp=True)
+#rec_signal_niko = wav_reconstructed_signal(sig, waves_niko, no_amp=False, individual_amp=True)
 #amp, phase = amplitude_phase_wav(coeffs)
 #amp2, phase2 = amplitude_phase_wav(waves)
 
 '''plot signals and wavelets'''
-plot_signal_phase_fft()
-plot_waves_amplitude_phase_WL('python wavelet', sig, rec_signal_pywt, waves_pywt, freq_bands_pywt )
-plot_waves_amplitude_phase_WL('niko wavelet', sig, rec_signal_niko, waves_niko, freq_bands_niko)
+#plot_signal_phase_fft()
+#plot_waves_amplitude_phase_WL('python wavelet', sig, rec_signal_pywt, waves_pywt, freq_bands_pywt )
+#plot_waves_amplitude_phase_WL('niko wavelet', sig, rec_signal_niko, waves_niko, freq_bands_niko)
 #plot_comparison_methods()
-plt.show()
+#plt.show()
