@@ -51,7 +51,7 @@ class wavelets_scaling:
    
 
     
-def scales_fourier(wav_kernel, base = 2, frequency_spacing = 0.001, num_bands = 4, fourier_factor = 0.25 ):
+def scales_fourier(wav_kernel, base = 3, frequency_spacing = 0.001, num_bands = 4, fourier_factor = 0.25 ):
     '''
     provides automatic scaling for wavelet spectral frequencies in log2 spacing 
     by using the last fourier mode as initial seed
@@ -297,7 +297,7 @@ amplitudes = [0.5, 1, 2]
 t = np.arange(600) 
 sampling_dt = 1
 
-sig = create_signal(frequencies, amplitudes, t, gauss = False )#
+sig = create_signal(frequencies, amplitudes, t, gauss = True )#
 
 
 '''compute 1d fourier transformation'''
@@ -306,8 +306,8 @@ freq_specrum, fft1d = FFT(t, sig)#fft(sig)/len(t)
 nyquist = int(len(fft1d))
 
 '''compute wavelet decomposition for 2 different methods'''
-waves_pywt, freq_bands_pywt = pywt_compute_wavelets( freq = True )
-waves_niko, periods, freq_bands_niko, cois = niko_compute_wavelets(freq = True)
+waves_pywt, freq_bands_pywt = pywt_compute_wavelets( freq = False )
+waves_niko, periods, freq_bands_niko, cois = niko_compute_wavelets(freq = False)
 
 '''reconstruct the signal form the wavelets'''
 rec_signal_pywt = wav_reconstructed_signal(sig, waves_pywt, no_amp=False, individual_amp=True)
@@ -317,7 +317,7 @@ rec_signal_niko = wav_reconstructed_signal(sig, waves_niko, no_amp=False, indivi
 
 '''plot signals and wavelets'''
 plot_signal_phase_fft()
-#plot_waves_amplitude_phase_WL('python wavelet', sig, rec_signal_pywt, waves_pywt, freq_bands_pywt )
-#plot_waves_amplitude_phase_WL('niko wavelet', sig, rec_signal_niko, waves_niko, freq_bands_niko)
+plot_waves_amplitude_phase_WL('python wavelet', sig, rec_signal_pywt, waves_pywt, freq_bands_pywt )
+plot_waves_amplitude_phase_WL('niko wavelet', sig, rec_signal_niko, waves_niko, freq_bands_niko)
 #plot_comparison_methods()
 plt.show()
