@@ -16,6 +16,16 @@ import pandas as pd
 #jl = Julia(compiled_modules=False)
 
 
+name = '../../package_CMI_prague/data/exp_raw/binfiles/Rossler_bin_0.000.bin'
+
+
+#df = pd.read_csv('EURUSD.csv',sep='\t', index_col='Date')
+#df = rsd.read_bin_bin_dataframe(name)
+#df.sort_index(inplace=True)
+#df = df.resample('W').last()
+#sig =  np.array(df['x'][0:1000])
+
+
 #131072 samples of the first components of the coupled Roessler systems, for 100 different epsilons from 0 to almost 0.25.
 def read_raw_data(namem, start_index, end_index):
     usecols = [0,1]

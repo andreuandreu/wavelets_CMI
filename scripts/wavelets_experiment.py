@@ -3,43 +3,42 @@ from numpy.testing._private.utils import nulp_diff
 import pandas as pd
 import matplotlib.pyplot as plt
 import read_surrogate_data as rsd
-import generate_colored_noises as gcn
+
 import wavelet_analysis as wa
 import numpy as np
 from numpy.fft import fft, ifft
 import pywt
 from scipy import signal
+import create_synthetic_signals as css
 
 
-name = '../../package_CMI_prague/data/exp_raw/binfiles/Rossler_bin_0.000.bin'
+'''
+Functions to decompose a signal into its component continuos wavelets and reconstruct it
 
 
-#df = pd.read_csv('EURUSD.csv',sep='\t', index_col='Date')
-#df = rsd.read_bin_bin_dataframe(name)
-#df.sort_index(inplace=True)
-#df = df.resample('W').last()
-#sig =  np.array(df['x'][0:1000])
+- 1st provide a univaluated signal, chose one function from the create_synthetic_signals script
 
+- 2nd do the fast fourier transfrom of the signal using the FFT(t, sig) function
 
+- 3rd compute wavelet decomposition for one or both provided methods
+    niko_compute_wavelets(freq = True)
+    pywt_compute_wavelets(freq = True)
+    if frequency is true, then the decomposition would be around the provided list of frequencies
+    otherwise it will compute a discrete set of frequencies in base 2 to decompose
+    in this case one has to initialize the values of the desired intervals into the wavelets_scaling class
 
-def create_signal(frequencies, amplitudes, t, noise = False, gauss = False):
-    ''' return signals as the sum of cosines of different frequencies
-    
-    noise or exponential delay can be added default is no'''
-    
-    sig_cos = []
-    sig_gauss =  10*np.real(np.exp(-0.001*(t-len(t)/2)**2))#*np.exp(1j*2*np.pi*2*(t-0.4)))
-    sig_noise = np.random.normal(0,0.1, size=(len(t)))
-    sig = np.zeros(len(t))
+- 4th reconstruct the signal using function  wav_reconstructed_signal(sig, waves_pywt, no_amp=False, individual_amp=True)
+    here 3 methods of reconstruction can be probided that rescale the amplitudes, 
+        no_amplitude: does not rescale
+        global_amp: rescales the sum of the wavelets to the amplitude of the signal
+        individual_amp: rescales each wavelet to the amplitude of the signal
 
-    for i, f in enumerate(frequencies):
-        sig_cos.append( np.cos( 2*np.pi * f * t) )  #+ signal.gausspulse(t - 0.4, fc=2)
-        sig += amplitudes[i]*sig_cos[i]
-    
-    if noise: sig += sig_noise
-    if gauss: sig += sig_gauss
-    
-    return sig
+- 5th plots
+        plot_signal_phase_fft(): signal + phase transform + FFt in frequency and wavenumber domain
+        plot_waves_amplitude_phase_WL(): reconstruction of the signal and each wavelet (phase and amplitude) corresponding to the provided frequency
+        plot_comparison_methods(): to compare the wavelets and reconstructions of two different wavelet methods ->in development<-   
+'''
+
 
 class wavelets_scaling:
 
@@ -142,11 +141,11 @@ def wav_reconstructed_signal(sig, waves, no_amp = True, individual_amp = False, 
     reconstructs the signal in three possible ways, no reescale, rescaling the whole signal, recale individual amplitudes
     
     :param waves: the wavelets that the signal has been decomposed into
-    :param **kargs: 
-        :no_amplitude: DEFAULT do not reescale the amplitude of the signal, 
-                    if one of the other kargs is made True this shall be false
-        :individual_amp: if true, reescale each amplitude of each wavelet and then multiply them to reconstruct
-        :global_amp: reescale teh whole reconstructed signal to have the same amplitude as the original
+    :param **kwargs: 
+        :no_amplitude: DEFAULT do not rescale the amplitude of the signal, 
+                    if one of the other kwargs is made True this shall be false
+        :individual_amp: if true, rescale each amplitude of each wavelet and then multiply them to reconstruct
+        :global_amp: rescale teh whole reconstructed signal to have the same amplitude as the original
     :return: reconstructed signal
     '''
     
@@ -297,7 +296,11 @@ amplitudes = [0.5, 1, 2]
 t = np.arange(600) 
 sampling_dt = 1
 
+<<<<<<< HEAD
 sig = create_signal(frequencies, amplitudes, t, gauss = True )#
+=======
+sig = css.create_signal(frequencies, amplitudes, t, gauss = False )#
+>>>>>>> 6f02a36dd949b98505895e43281359d780a06761
 
 
 '''compute 1d fourier transformation'''
