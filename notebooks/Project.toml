@@ -1,4 +1,5 @@
 [deps]
 DelayEmbeddings = "5732040d-69e3-5649-938a-b6b4f237613f"
 Entropies = "ed8fcbec-b94c-44b6-89df-898894ad9591"
+PyPlot = "d330b81b-6aea-500a-939a-2ce795aea3ee"
 TransferEntropy = "ea221983-52f3-5440-99c7-13ea201cd633"
