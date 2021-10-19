@@ -35,12 +35,13 @@ class signal_properties:
     :param freq1: numerical value of the other frequency, usually about one order of magnitude away from freq0 
 
     '''
-    def __init__(self, amplitude = 1, length_t = 200, noise_amp = 0.1, freq0 = 10, freq1 = 100 ):
+    def __init__(self, amplitude = 1, length_t = 200, noise_amp = 0.1, freq0 = 10, freq1 = 100, delay = 50 ):
         self.amplitude = amplitude
         self.length_t = length_t
         self.noise_amp = noise_amp
         self.freq0 = freq0
         self.freq1 = freq1
+        self.delay = delay
         
 
 def create_signal(frequencies, amplitudes, t, noise = False, gauss = False):
@@ -69,24 +70,24 @@ def create_signal(frequencies, amplitudes, t, noise = False, gauss = False):
 
 
 
-def multiplicative_coupling(amp, freq0, freq1, length_t, delay):
+def multiplicative_coupling(par_sig = signal_properties):
     '''
     create coupled signal by multiplying two time series with a delay
     '''
 
     phase_noise = noise_phase()
-    t = np.arange(0, 1, 1./length_t)
+    t = np.arange(0, 1, 1./par_sig.length_t)
     end = len(t)
     noise0 = noise_signal(end)
     noise1 = noise_signal(end)
-    sig0 =  np.cos(np.pi*freq0 *t + phase_noise) + noise0
-    sig1 =  np.cos(np.pi*freq1 *t + phase_noise)
+    sig0 =  np.cos(np.pi*par_sig.freq0 *t + phase_noise) + noise0
+    sig1 =  np.cos(np.pi*par_sig.freq1 *t + phase_noise)
 
-    target = amp * sig0[delay:] * sig1[:end-delay] + noise1
+    target = par_sig.amp * sig0[par_sig.delay:] * sig1[:end-par_sig.delay] + noise1
     return sig0, target
 
 
-def create_victor_signal(num_segments,  base_length, delay = 2, amp_min = 5,  factor = 0.04, norm = 0.08, round_int = 3):
+def create_victor_signal(num_segments,  base_length, delay = 2, amp_min = 10,  factor = 0.04, norm = 0.08, round_int = 3):
 
     '''
     Create one signal with CFC between 10 & 70 Hz
@@ -217,9 +218,13 @@ def plot_delayed_undelayed():
     ax[3].plot(t_freq[s:e], phas_to_amp_sig[s:e], c = 'b')
     plt.tight_layout()
 
+def plot_victor_sig_file():
+    fig, ax = plt.subplots(1,1)
+    ax.plot(victor_sig['signal'][0][0:1111])
+
 victor_sig = io.loadmat('./data/exp_pro/matlab_victor_sin_data/signal_alpha2gamma.mat')
-#plt.plot(victor_sig['signal'][0:1111])
-#print(len(victor_sig['signal']))
+
+
 '''compute delay signal'''
 num_segments = 3#100
 base_length = 11111
@@ -227,6 +232,7 @@ delay = 50
 
 t_freq, no_coupling_sig , amp_to_phase_sig, phas_to_amp_sig, time_delay_amp_to_phas, time_delay_phas_to_amp = create_victor_signal(num_segments,  base_length, delay)
 plot_delayed_undelayed()
+plot_victor_sig_file()
 plt.show()
 
 
