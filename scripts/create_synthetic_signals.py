@@ -9,6 +9,36 @@ from numpy import random as rn
 from scipy import signal
 
 
+def get_ave_values(xvalues, yvalues, n = 5):
+    
+    signal_length = len(xvalues)
+    if signal_length % n == 0:
+        padding_length = 0
+    else:
+        padding_length = n - signal_length//n % n
+    xarr = np.array(xvalues)
+    yarr = np.array(yvalues)
+    xarr.resize(signal_length//n, n)
+    yarr.resize(signal_length//n, n)
+    xarr_reshaped = xarr.reshape((-1,n))
+    yarr_reshaped = yarr.reshape((-1,n))
+    x_ave = xarr_reshaped[:,0]
+    y_ave = np.nanmean(yarr_reshaped, axis=1)
+    
+    return x_ave, y_ave
+
+def online_ENSO_34():
+
+    dataset = "http://paos.colorado.edu/research/wavelets/wave_idl/sst_nino3.dat"
+    df_ENSO = pd.read_table(dataset)
+    N = df_ENSO.shape[0]
+    t0=1871
+    dt=0.25
+    time = np.arange(0, N) * dt + t0
+    signal = df_ENSO.values.squeeze()
+
+    return time, signal
+
 def create_signal(frequencies, amplitudes, t, noise = False, gauss = False):
     ''' 
     return  a signal as the sum of cosines of different frequencies and corresponding amplitudes provided
@@ -21,7 +51,7 @@ def create_signal(frequencies, amplitudes, t, noise = False, gauss = False):
     
     sig_cos = []
     sig_gauss =  10*np.real(np.exp(-0.001*(t-len(t)/2)**2))#*np.exp(1j*2*np.pi*2*(t-0.4)))
-    sig_noise = rn.normal(0,0.1, size=(len(t)))
+    sig_noise = rn.normal(0,0.25, size=(len(t)))
     sig = np.zeros(len(t))
 
     for i, f in enumerate(frequencies):
