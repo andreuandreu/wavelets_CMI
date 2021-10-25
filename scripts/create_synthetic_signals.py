@@ -10,8 +10,7 @@ from scipy import signal
 from scipy import io
 
 
-<<<<<<< HEAD
-
+    
 def noise_signal(length_n):
     '''Create noise signals'''
     return rn.uniform(0, 1, length_n)
@@ -24,7 +23,6 @@ def pink_noise_signal(length_n):
     '''Create pink noise signals'''
     return gcn.pink(length_n, state=None)
 
-
 class signal_properties:
     '''
     Initialize the parameters needed to create sinthetic signals
@@ -36,15 +34,14 @@ class signal_properties:
     :param freq1: numerical value of the other frequency, usually about one order of magnitude away from freq0 
 
     '''
-    def __init__(self, amplitude = 1, length_t = 200, noise_amp = 0.1, freq0 = 10, freq1 = 100, delay = 50 ):
+    def __init__(self, amplitude = 1, length_t = 200, noise_amp = 0.1, freq0 = 10, freq1 = 100 ):
         self.amplitude = amplitude
         self.length_t = length_t
         self.noise_amp = noise_amp
         self.freq0 = freq0
         self.freq1 = freq1
-        self.delay = delay
         
-=======
+
 def get_ave_values(xvalues, yvalues, n = 5):
     
     signal_length = len(xvalues)
@@ -74,7 +71,6 @@ def online_ENSO_34():
     signal = df_ENSO.values.squeeze()
 
     return time, signal
->>>>>>> temp-branch
 
 def create_signal(frequencies, amplitudes, t, noise = False, gauss = False):
     ''' 
@@ -168,9 +164,9 @@ def create_victor_signal(num_segments,  base_length, delay = 2, amp_min = 10,  f
             aux2 = (np.sin(2*π*f_amp*t[i]) + 1)
             sig_amp.append( aux1 * aux2 ) 
 
-        plt.plot(t, sig_amp)
+        #plt.plot(t, sig_amp)
         return np.array( sig_amp )
-    
+
 
 
     def directionality_signal(delay, white = True, pink = True):
@@ -257,7 +253,7 @@ def plot_victor_sig_file():
 victor_sig = io.loadmat('./data/exp_pro/matlab_victor_sin_data/signal_alpha2gamma.mat')
 
 
-'''compute delay signal'''
+'''compute delay signal
 num_segments = 3#100
 base_length = 11111
 delay = 50
@@ -266,5 +262,4 @@ t_freq, no_coupling_sig , amp_to_phase_sig, phas_to_amp_sig, time_delay_amp_to_p
 plot_delayed_undelayed()
 plot_victor_sig_file()
 plt.show()
-
-
+'''
