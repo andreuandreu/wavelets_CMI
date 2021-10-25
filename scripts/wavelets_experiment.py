@@ -206,8 +206,9 @@ def plot_signal_plus_average(ax, time, signal, time_ave, signal_ave, average_ove
     ax.plot(time_ave, signal_ave, label = 'time average (n={})'.format(6))
     ax.legend(loc='upper right', fontsize='small', frameon = False)
 
-def plot_signal_phase_fft():
 
+
+def plot_signal_phase_fft():
 
     plt.rcParams['figure.figsize'] = [12, 7]
     fig, ax = plt.subplots(3,1)
@@ -231,7 +232,7 @@ def plot_signal_phase_fft():
     # plotting the fft of the signal in frequency domain
     ax[2].set_title("fft Spectrum of the Signal")
     #ax[2].loglog(fft1d[0:nyquist], 'r')
-    ax[2].plot(freq_specrum, fft1d/len(t) )
+    ax[2].plot(freq_specrum, 2*fft1d/len(t) )
     ax[2].scatter(frequencies, np.ones( len(frequencies) ) )
     
     # plotting the fft of the signal in scale/length domain and log scale
@@ -244,6 +245,36 @@ def plot_signal_phase_fft():
     #ax[2].loglog(frequencies, 'b')
     plt.tight_layout()
 
+
+
+def plot_fft(ax, plot_direction='vertical', yticks=None, ylim=None):
+
+    if plot_direction == 'vertical':
+
+
+        #fft with scales (periods/dimension) in log scale
+        scales = 1./freq_specrum
+        scales_log = np.log2(scales)
+        ax.scatter( [np.mean(2*fft1d/len(t))]* len(freq_specrum) , np.log2(scales))
+        ax.plot( 2*fft1d/len(t), scales_log, 'r-', label='Fourier Transform')
+        ax.legend(loc='upper right', fontsize='small', frameon = False)
+        #plot power
+        #variance = np.std(sig)**2
+        #ax.plot( 2* variance * abs(fft1d) ** 2/len(fft1d), scales_log, 'k--', linewidth=1, label='FFT Power Spectrum')
+        
+        #set log scale
+        ax.set_yticks(np.log2(yticks))
+        ax.set_yticklabels(yticks)
+        ax.invert_yaxis()
+        ax.set_ylim(ylim[0], -1)
+
+        #fft with frequencies and linear scale
+        ax2 = ax.twinx()
+        ax2.plot( 2*fft1d/len(t), freq_specrum, 'g--' )
+        ax2.set_yscale('linear')
+        ax2.set_ylabel('Frequency', color='g')
+
+
 def plot_waves_amplitude_phase_WL(title, sig, rec_sig, waves, frequencies):
     
     fig, axs =  plt.subplots(nrows=3, ncols=len(waves),  sharey="row", figsize=(15, 10))#sharex=True,
@@ -252,8 +283,6 @@ def plot_waves_amplitude_phase_WL(title, sig, rec_sig, waves, frequencies):
     axs[0, 0].set_ylabel("signal")
     axs[1, 0].set_ylabel("amplitude")
     axs[2, 0].set_ylabel("phase")
-
-  
     
     for i in range(len(waves)):
         axs[0, i].set_title(' F  {0:.2f}  P {1:.2f}'.format(frequencies[i], 1./frequencies[i]) )
@@ -300,18 +329,25 @@ def plot_comparison_methods(wav1, wav2):
 
 
 def plot_scalogram_fft_signal_together(time, signal, time_ave, signal_ave, freq, wavelets, waveletname):
-
-    fig = plt.figure(figsize=(12,12))
    
+    #prepare plot
+    fig = plt.figure(figsize=(12,12))
     spec = gridspec.GridSpec(ncols=6, nrows=6)
     top_ax = fig.add_subplot(spec[0, 0:5])
     bottom_left_ax = fig.add_subplot(spec[1:, 0:5])
     bottom_right_ax = fig.add_subplot(spec[1:, 5])
 
+    #plot signal
     plot_signal_plus_average(top_ax, time, signal, time_ave, signal_ave, average_over = 5)
-    yticks, ylim = plot_wavelet_scalogram( time, freq, wavelets, waveletname, bottom_left_ax )
-
-    #plot_fft_plus_power(bottom_right_ax, time, signal, plot_direction='vertical', yticks=yticks, ylim=ylim)
+    
+    #plot scalogram
+    yticks, ylim, im = plot_wavelet_scalogram( time, freq, wavelets, waveletname, bottom_left_ax )
+    #position colorbar
+    cbar_ax = fig.add_axes([0.9, 0.85, 0.01, 0.1])
+    fig.colorbar(im, cax=cbar_ax, orientation="vertical")
+    
+    #plot fft
+    plot_fft(bottom_right_ax, plot_direction='vertical', yticks=yticks, ylim=ylim)
     bottom_right_ax.set_ylabel('Period [years]', fontsize=14)
     plt.tight_layout()
  
@@ -324,16 +360,14 @@ def plot_wavelet_scalogram(time, freq, wavelets, waveletname = 'cmor', ax = plt.
     period = sampling_dt /freq
     
     #prepare contours levels 
-    levels = [0.0625, 0.125, 0.25, 0.5, 1, 2, 4, 8]#[0.0625, 0.25,  1, 8]##
+    levels = [0.0625, 0.25,  1, 8]##[0.0625, 0.125, 0.25, 0.5, 1, 2, 4, 8]#
     contourlevels = np.log2(levels)
-    
-    fig, ax = plt.subplots(figsize=(15, 10))
-
     cmap = plt.cm.seismic
     im = ax.contourf(time, np.log2(period), np.log2(power), contourlevels, extend='both',cmap=cmap)
     
+    #prepare axis tags
     ax.set_title('Wavelet '+waveletname+' Transform/time Power Spectrum)', fontsize=20)
-    ax.set_ylabel('Scale', fontsize=18)
+    ax.set_ylabel('Scale (years)', fontsize=18)
     ax.set_xlabel('Time', fontsize=18)
     
     #arrange y axis scales
@@ -344,10 +378,8 @@ def plot_wavelet_scalogram(time, freq, wavelets, waveletname = 'cmor', ax = plt.
     ylim = ax.get_ylim()
     ax.set_ylim(ylim[0], -1)
     
-    return yticks, ylim
-    #position colorbar
-    #cbar_ax = fig.add_axes([0.95, 0.5, 0.03, 0.25])
-    #fig.colorbar(im, cax=cbar_ax, orientation="vertical")
+    return yticks, ylim, im
+
 
 
 def FFT(t, sig):
@@ -379,7 +411,7 @@ amplitudes = [0.5, 1, 2]
 
 t, sig = css.online_ENSO_34()
 sampling_dt = t[1]-t[0]
-frequencies = 1/np.arange(1, 128)
+frequencies = 1/np.arange(1, 128, 0.5)
 time_ave, signal_ave = css.get_ave_values(t, sig, 6)
 
 '''compute 1d fourier transformation'''
