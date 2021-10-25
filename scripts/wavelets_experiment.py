@@ -327,7 +327,7 @@ def plot_wavelet_scalogram(time, freq, wavelets, waveletname = 'cmor', ax = plt.
     levels = [0.0625, 0.125, 0.25, 0.5, 1, 2, 4, 8]#[0.0625, 0.25,  1, 8]##
     contourlevels = np.log2(levels)
     
-    #fig, ax = plt.subplots(figsize=(15, 10))
+    fig, ax = plt.subplots(figsize=(15, 10))
 
     cmap = plt.cm.seismic
     im = ax.contourf(time, np.log2(period), np.log2(power), contourlevels, extend='both',cmap=cmap)
@@ -344,6 +344,7 @@ def plot_wavelet_scalogram(time, freq, wavelets, waveletname = 'cmor', ax = plt.
     ylim = ax.get_ylim()
     ax.set_ylim(ylim[0], -1)
     
+    return yticks, ylim
     #position colorbar
     #cbar_ax = fig.add_axes([0.95, 0.5, 0.03, 0.25])
     #fig.colorbar(im, cax=cbar_ax, orientation="vertical")
@@ -400,11 +401,11 @@ waves_niko, periods, freq_bands_niko, cois = niko_compute_wavelets(freq = True, 
 #amp2, phase2 = amplitude_phase_wav(waves)
 
 '''plot signals and wavelets'''
-plot_signal_phase_fft()
+#plot_signal_phase_fft()
 plot_scalogram_fft_signal_together(t, sig, time_ave, signal_ave, frequencies, waves_pywt, waveletname = 'cmor')
 
-plot_wavelet_scalogram(t, freq_bands_niko, waves_niko, waveletname = 'morlet'  )
-plot_wavelet_scalogram(t, freq_bands_pywt, waves_pywt, waveletname = 'cmor'  )#cmor1.5-1.0
+#plot_wavelet_scalogram(t, freq_bands_niko, waves_niko, waveletname = 'morlet'  )
+#plot_wavelet_scalogram(t, freq_bands_pywt, waves_pywt, waveletname = 'cmor'  )#cmor1.5-1.0
 #plot_waves_amplitude_phase_WL('python wavelet', sig, rec_signal_pywt, waves_pywt, freq_bands_pywt )
 #plot_waves_amplitude_phase_WL('niko wavelet', sig, rec_signal_niko, waves_niko, freq_bands_niko)
 #plot_comparison_methods()
