@@ -411,12 +411,24 @@ amplitudes = [0.5, 1, 2]
 #t = np.arange(600) 
 #sig = css.create_signal(frequencies, amplitudes, t, gauss = True, noise = True )#
 
-data = './data/'#'../data/' in case you are in the scripts folder
-name_sig = 'ENSO34_1880-2020'
-t, sig = css.online_ENSO_34()
+data = './data/output/'#'../data/' in case you are in the scripts folder
+#name_sig = 'ENSO34_1880-2020'
+#t, sig = css.online_ENSO_34()
+
+
+name_ENSO = './data/imput/s_nino3418702020.csv'
+name_rain = './data/imput/s_allindiarain18712016.csv'
+name_sig = 'rain_india_manuel'
+sig, dates = css.read_ENSO_rain_manuel_files(name_rain)
+
+t = np.arange(1871, 1871+len(sig)//12, 1/12. ) 
+print(sig, t)
 sampling_dt = t[1]-t[0]
+print(sampling_dt, t[-1], len(t))
 frequencies = 1/np.arange(1, 128, 16)
-time_ave, signal_ave = css.get_ave_values(t, sig, 6)
+
+frequencies = [1/12, 1, 2, 5]
+time_ave, signal_ave = css.get_ave_values(t, sig, 2)
 
 '''compute 1d fourier transformation'''
 #fft, ifft
@@ -436,18 +448,18 @@ amplitude_phase_wav(waves_pywt, name_files_pywt)
 
 '''reconstruct the signal form the wavelets'''
 
-#rec_signal_pywt = wav_reconstructed_signal(sig, waves_pywt, no_amp=False, individual_amp=True)
+rec_signal_pywt = wav_reconstructed_signal(sig, waves_pywt, no_amp=False, individual_amp=True)
 #rec_signal_niko = wav_reconstructed_signal(sig, waves_niko, no_amp=False, individual_amp=True)
 #amp, phase = amplitude_phase_wav(coeffs)
 #amp2, phase2 = amplitude_phase_wav(waves)
 
 '''plot signals and wavelets'''
 #plot_signal_phase_fft()
-plot_scalogram_fft_signal_together(t, sig, time_ave, signal_ave, frequencies, waves_pywt, waveletname = kernel_pywl)
+#plot_scalogram_fft_signal_together(t, sig, time_ave, signal_ave, frequencies, waves_pywt, waveletname = kernel_pywl)
 
 #plot_wavelet_scalogram(t, freq_bands_niko, waves_niko, waveletname = kernel_niko  )
 #plot_wavelet_scalogram(t, freq_bands_pywt, waves_pywt, waveletname = kernel_pywl  )
-#plot_waves_amplitude_phase_WL('python wavelet', sig, rec_signal_pywt, waves_pywt, freq_bands_pywt )
+plot_waves_amplitude_phase_WL('python wavelet', sig, rec_signal_pywt, waves_pywt, freq_bands_pywt )
 #plot_waves_amplitude_phase_WL('niko wavelet', sig, rec_signal_niko, waves_niko, freq_bands_niko)
 #plot_comparison_methods()
 plt.show()

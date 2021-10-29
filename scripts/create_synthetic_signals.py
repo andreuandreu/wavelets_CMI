@@ -72,6 +72,17 @@ def online_ENSO_34():
 
     return time, signal
 
+
+def read_ENSO_rain_manuel_files(name):
+    ''' read formated file'''
+    sig, t = np.genfromtxt(name ,delimiter=',' ,
+           dtype="i4,f8,S10", names=['pos','dC_mon','DATE'],
+           skip_header=True, unpack=True, usecols=[1, 2])
+
+    return sig, t
+
+
+
 def create_signal(frequencies, amplitudes, t, noise = False, gauss = False):
     ''' 
     return  a signal as the sum of cosines of different frequencies and corresponding amplitudes provided
