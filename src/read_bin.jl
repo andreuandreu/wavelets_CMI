@@ -1,6 +1,6 @@
 using Printf
 
-function read_bin_couplings(root; n_points = 131072, couplings = LinRange(0, 0.25, 99))
+function read_bin_couplings(root = "../data/", n_points = 131072, couplings = LinRange(0, 0.25, 99))
 
     all = Array{Float64}(undef,  n_points, 2, length(couplings));
     aa = Array{Float64}(undef,  n_points, 2)
