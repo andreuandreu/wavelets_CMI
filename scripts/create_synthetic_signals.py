@@ -8,7 +8,7 @@ import numpy as np
 from numpy import random as rn
 from scipy import signal
 from scipy import io
-
+import calendar
 
     
 def noise_signal(length_n):
@@ -70,16 +70,22 @@ def online_ENSO_34():
     time = np.arange(0, N) * dt + t0
     signal = df_ENSO.values.squeeze()
 
-    return time, signal
+    return   time, signal
 
 
 def read_ENSO_rain_manuel_files(name):
     ''' read formated file'''
-    sig, t = np.genfromtxt(name ,delimiter=',' ,
+    sig, dates = np.genfromtxt(name ,delimiter=',' ,
            dtype="i4,f8,S10", names=['pos','dC_mon','DATE'],
            skip_header=True, unpack=True, usecols=[1, 2])
 
-    return sig, t
+    N = sig.shape[0]
+    t0=1870
+    dt=1/12
+    time = np.arange(0, N) * dt + t0 
+    print('dates, from:', dates[0], 'to', dates[-1], 'in intervals of \n',  dates[1] )
+    #t = np.arange(1871, 1871+len(sig)//12, 1/12. ) 
+    return  time, 20*(sig/np.mean(sig)-1)
 
 
 
@@ -105,7 +111,7 @@ def create_signal(frequencies, amplitudes, t, noise = False, gauss = False):
     if noise: sig += sig_noise
     if gauss: sig += sig_gauss
     
-    return sig
+    return t, sig
 
 
 

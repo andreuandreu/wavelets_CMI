@@ -35,7 +35,7 @@ Functions to decompose a signal into its component continuos wavelets and recons
         individual_amp: rescales each wavelet to the amplitude of the signal
 
 - 5th plots
-        plot_signal_phase_fft(): signal + phase transform + FFt in frequency and wavenumber domain
+        plot_signal_phase_fft(time, signal): signal + phase transform + FFt in frequency and wavenumber domain
         plot_waves_amplitude_phase_WL(): reconstruction of the signal and each wavelet (phase and amplitude) corresponding to the provided frequency
         plot_comparison_methods(): to compare the wavelets and reconstructions of two different wavelet methods ->in development<-   
 '''
@@ -71,7 +71,7 @@ def scales_fourier(wav_kernel, par ): #base = 3, frequengit branch -dcy_spacing 
     
     print(par.frequency_spacing, par.base, par.num_bands)
     scales = []
-    aux = 1/freq_specrum[  np.where(fft1d/len(t) > 0.05)[0][-1] ] #last frequency of  the highest fourier mode    
+    aux = 1/freq_spectrum[  np.where(fft1d/len(t) > 0.05)[0][-1] ] #last frequency of  the highest fourier mode    
     s0 = (par.fourier_factor * aux * ( 1.0 / sampling_dt)) / wav_kernel # 
     #int(np.where(fft1d == max(fft1d[0:nyquist]))[0]/2 )/len(t))
     for i in range(par.num_bands):
@@ -92,16 +92,16 @@ def pywt_compute_wavelets(kernel_pywl = 'cmor', freq = True, par_scales =  wavel
     
 
     #scales = int(central_periods)
-    #scales = central_periods
+    scales = 1/frequencies
     padded_data =  sig
-    coeffs, _ = pywt.cwt(
+    coeffs, freq_pywt = pywt.cwt(
                 padded_data,
                 scales=scales,
                 wavelet=kernel_pywl,
-                sampling_period=1,
+                sampling_period=sampling_dt,
                 #axis=0,
             )
-    return coeffs, 1./np.array(scales)
+    return coeffs, freq_pywt
 
 
 
@@ -210,7 +210,7 @@ def plot_signal_plus_average(ax, time, signal, time_ave, signal_ave, average_ove
 
 
 
-def plot_signal_phase_fft():
+def plot_signal_phase_fft(time, signal, freq_spectrum, frequencies, fft1d):
 
     plt.rcParams['figure.figsize'] = [12, 7]
     fig, ax = plt.subplots(3,1)
@@ -219,29 +219,29 @@ def plot_signal_phase_fft():
     ax[0].set_xlabel('Time')
     ax[0].set_ylabel('Amplitude')
     ax[0].set_title("Signal + Time Average")
-    ax[0].set_xlim([t[0], t[-1]])
-    ax[0].plot(t, sig, color ='green')
-
+    ax[0].set_xlim([time[0], time[-1]])
+    ax[0].plot(time, signal, color ='green')
+    ax[0].plot(t, sig, color ='r')
     #plotting the average of the signal
-    time_ave, signal_ave = css.get_ave_values(t, sig, 6)
-    ax[0].plot(time_ave, signal_ave, label = 'time average (n={})'.format(6))
+    time_ave, signal_ave = css.get_ave_values(time, signal, 6)
+    #ax[0].plot(time_ave, signal_ave, label = 'time average (n={})'.format(6))
     ax[0].legend(loc='upper right', fontsize='small', frameon = False)
    
     # plotting the phase spectrum of the signal 
     ax[1].set_title("Phase Spectrum of the Signal")
-    ax[1].phase_spectrum(sig, color ='green')
+    ax[1].phase_spectrum(signal, color ='green')
 
     # plotting the fft of the signal in frequency domain
     ax[2].set_title("fft Spectrum of the Signal")
     #ax[2].loglog(fft1d[0:nyquist], 'r')
-    ax[2].plot(freq_specrum, 2*fft1d/len(t) )
+    ax[2].plot(freq_spectrum, 2*fft1d/len(t) )
     ax[2].scatter(frequencies, np.ones( len(frequencies) ) )
     
     # plotting the fft of the signal in scale/length domain and log scale
     ax2 = ax[2].twiny()
-    ax2.plot(1./freq_specrum, fft1d/len(t), c='r')
-    ax2.scatter(1./np.array(freq_bands_niko), np.ones( len(freq_bands_niko) ), c='r') 
-    #ax2.semilogx(len(t)/freq_specrum**2, fft1d/len(t), c='r')
+    ax2.plot(1./freq_spectrum, fft1d/len(time), c='r')
+    #ax2.scatter(1./np.array(freq_bands_niko), np.ones( len(freq_bands_niko) ), c='r') 
+    #ax2.semilogx(len(t)/freq_spectrum**2, fft1d/len(t), c='r')
     ax2.set_xscale('log')
     ax2.set_xlabel('wavenum', color='r')
     #ax[2].loglog(frequencies, 'b')
@@ -255,9 +255,9 @@ def plot_fft(ax, plot_direction='vertical', yticks=None, ylim=None):
 
 
         #fft with scales (periods/dimension) in log scale
-        scales = 1./freq_specrum
+        scales = 1./freq_spectrum
         scales_log = np.log2(scales)
-        ax.scatter( [np.mean(2*fft1d/len(t))]* len(freq_specrum) , np.log2(scales))
+        ax.scatter( [np.mean(2*fft1d/len(t))]* len(freq_spectrum) , np.log2(scales))
         ax.plot( 2*fft1d/len(t), scales_log, 'r-', label='Fourier Transform')
         ax.legend(loc='upper right', fontsize='small', frameon = False)
         #plot power
@@ -272,7 +272,7 @@ def plot_fft(ax, plot_direction='vertical', yticks=None, ylim=None):
 
         #fft with frequencies and linear scale
         ax2 = ax.twinx()
-        ax2.plot( 2*fft1d/len(t), freq_specrum, 'g--' )
+        ax2.plot( 2*fft1d/len(t), freq_spectrum, 'g--' )
         ax2.set_yscale('linear')
         ax2.set_ylabel('Frequency', color='g')
 
@@ -359,10 +359,10 @@ def plot_wavelet_scalogram(time, freq, wavelets, waveletname = 'cmor', ax = plt.
 
     #prepare data
     power = (abs(wavelets)) ** 2
-    period = sampling_dt /freq
+    period = 1./freq#sampling_dt /freq
     
     #prepare contours levels 
-    levels = [0.0625, 0.25,  1, 8]##[0.0625, 0.125, 0.25, 0.5, 1, 2, 4, 8]#
+    levels = [0.0625, 0.125, 0.25, 0.5, 1, 2, 4, 8]#[0.0625, 0.25,  1, 8]##[8, 16000, 32000, 128000]#
     contourlevels = np.log2(levels)
     cmap = plt.cm.seismic
     im = ax.contourf(time, np.log2(period), np.log2(power), contourlevels, extend='both',cmap=cmap)
@@ -404,12 +404,12 @@ def FFT(t, sig):
 
 
 '''compute signal'''
-#frequencies = [ 1/20., 1/100, 1/6] #freq, they shall be below one
+seed_freq = [ 1/20., 1/100, 1/6] #freq, they shall be below one
 amplitudes = [0.5, 1, 2]
 
 #sampling_dt = 1
 #t = np.arange(600) 
-#sig = css.create_signal(frequencies, amplitudes, t, gauss = True, noise = True )#
+#sig = css.create_signal(seed_freq, amplitudes, t, gauss = True, noise = True )#
 
 data = './data/output/'#'../data/' in case you are in the scripts folder
 #name_sig = 'ENSO34_1880-2020'
@@ -418,21 +418,25 @@ data = './data/output/'#'../data/' in case you are in the scripts folder
 
 name_ENSO = './data/imput/s_nino3418702020.csv'
 name_rain = './data/imput/s_allindiarain18712016.csv'
-name_sig = 'rain_india_manuel'
-sig, dates = css.read_ENSO_rain_manuel_files(name_rain)
+#name_sig = 'rain_india_manuel'
+name_sig = 'ENSO_manuel'
+#name_sig = 'ENSO_online'
+t, sig = css.read_ENSO_rain_manuel_files(name_ENSO)
+#sig, dates = css.online_ENSO_34()
+time_ave, signal_ave = css.get_ave_values(t, sig, 3)
+t, sig = css.get_ave_values(t, sig, 3)
 
-t = np.arange(1871, 1871+len(sig)//12, 1/12. ) 
 print(sig, t)
 sampling_dt = t[1]-t[0]
 print(sampling_dt, t[-1], len(t))
-frequencies = 1/np.arange(1, 128, 16)
+#frequencies = 1/np.arange(1, len(sig)//12, 8)
+frequencies = 1/np.arange(1, 256)
 
-frequencies = [1/12, 1, 2, 5]
-time_ave, signal_ave = css.get_ave_values(t, sig, 2)
+
 
 '''compute 1d fourier transformation'''
 #fft, ifft
-freq_specrum, fft1d = FFT(t, sig)#fft(sig)/len(t)
+freq_spectrum, fft1d = FFT(t, sig)#fft(sig)/len(t)
 nyquist = int(len(fft1d))
 
 '''compute wavelet decomposition for 2 different methods'''
@@ -449,17 +453,28 @@ amplitude_phase_wav(waves_pywt, name_files_pywt)
 '''reconstruct the signal form the wavelets'''
 
 rec_signal_pywt = wav_reconstructed_signal(sig, waves_pywt, no_amp=False, individual_amp=True)
-#rec_signal_niko = wav_reconstructed_signal(sig, waves_niko, no_amp=False, individual_amp=True)
+rec_signal_niko = wav_reconstructed_signal(sig, waves_niko, no_amp=False, individual_amp=True)
 #amp, phase = amplitude_phase_wav(coeffs)
 #amp2, phase2 = amplitude_phase_wav(waves)
 
 '''plot signals and wavelets'''
-#plot_signal_phase_fft()
-#plot_scalogram_fft_signal_together(t, sig, time_ave, signal_ave, frequencies, waves_pywt, waveletname = kernel_pywl)
+plot_signal_phase_fft(t, sig, freq_spectrum, frequencies, fft1d)
+plot_scalogram_fft_signal_together(t, sig, time_ave, signal_ave, freq_bands_pywt , waves_pywt, waveletname = kernel_pywl)
+
+
+
+#time_ave2, signal_ave2 = css.get_ave_values(t, sig, 3)
+t, sig = css.online_ENSO_34()
+sampling_dt = t[1]-t[0]
+freq_spectrum, fft1d = FFT(t, sig)#fft(sig)/len(t)
+waves_pywt, freq_bands_pywt = pywt_compute_wavelets( freq = True, par_scales = bands_par )
+plot_signal_phase_fft(time_ave, signal_ave, freq_spectrum, frequencies, fft1d)
+plot_scalogram_fft_signal_together(t, sig, time_ave, signal_ave, freq_bands_pywt, waves_pywt, waveletname = kernel_pywl)
+
 
 #plot_wavelet_scalogram(t, freq_bands_niko, waves_niko, waveletname = kernel_niko  )
 #plot_wavelet_scalogram(t, freq_bands_pywt, waves_pywt, waveletname = kernel_pywl  )
-plot_waves_amplitude_phase_WL('python wavelet', sig, rec_signal_pywt, waves_pywt, freq_bands_pywt )
+#plot_waves_amplitude_phase_WL('python wavelet', sig, rec_signal_pywt, waves_pywt, freq_bands_pywt )
 #plot_waves_amplitude_phase_WL('niko wavelet', sig, rec_signal_niko, waves_niko, freq_bands_niko)
 #plot_comparison_methods()
 plt.show()
