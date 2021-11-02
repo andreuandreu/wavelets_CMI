@@ -3,13 +3,15 @@ include("../src/basicent.jl")
 using Plots
 using Suppressor
 using DrWatson
+using DataFrames
+
+
 
 
 
 
 
 function changevector!(A, τ, I)
-
     """this is a stupid function that given a vector A, copies it 
     to a vector B but changes  one unique value of that vector 
     in the position I, leaving all ther rest the same"""
@@ -42,6 +44,24 @@ root = "../../../TE_EG_project/package_CMI_prague/data/exp_raw/binfiles/Rossler_
 test_couplings = read_bin_couplings(root, n_points, couplings)
 
 
+
+
+input_file = ARGS[1]
+output_file = ARGS[2]
+
+data_frame = readtable(input_file, separator = ',')
+writetable(output_file, data_frame)
+
+function extract_instructions(input_file)
+
+    open(input_file, "r") do in_file
+        # Use a for loop to process the rows in the input file one-by-one
+        for line in eachline(in_file)
+
+        end
+    end
+    
+end
 
 
 "

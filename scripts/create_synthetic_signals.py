@@ -9,7 +9,7 @@ from numpy import random as rn
 from scipy import signal
 from scipy import io
 import calendar
-
+from dateutil.parser import parse
     
 def noise_signal(length_n):
     '''Create noise signals'''
@@ -80,12 +80,13 @@ def read_ENSO_rain_manuel_files(name):
            skip_header=True, unpack=True, usecols=[1, 2])
 
     N = sig.shape[0]
-    t0=1870
+    
+    t0 = parse(dates[0], fuzzy=True).year
     dt=1/12
     time = np.arange(0, N) * dt + t0 
     print('dates, from:', dates[0], 'to', dates[-1], 'in intervals of \n',  dates[1] )
     #t = np.arange(1871, 1871+len(sig)//12, 1/12. ) 
-    return  time, 20*(sig/np.mean(sig)-1)
+    return  time, 1*(sig/np.mean(sig)-1)
 
 
 

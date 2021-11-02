@@ -83,16 +83,13 @@ def pywt_compute_wavelets(kernel_pywl = 'cmor', freq = True, par_scales =  wavel
     
     
     if freq:
-        scales = (
-            np.array(1./np.array(frequencies))
-            * (1.0 / sampling_dt)
-            * pywt.central_frequency(kernel_pywl)
-        )
-    else: scales = scales_fourier( pywt.central_frequency(kernel_pywl), par_scales)
+        scales = 1/frequencies
+    else: 
+        scales = scales_fourier( pywt.central_frequency(kernel_pywl), par_scales)
     
 
     #scales = int(central_periods)
-    scales = 1/frequencies
+    
     padded_data =  sig
     coeffs, freq_pywt = pywt.cwt(
                 padded_data,
@@ -107,11 +104,11 @@ def pywt_compute_wavelets(kernel_pywl = 'cmor', freq = True, par_scales =  wavel
 
 def niko_compute_wavelets(freq = True, par_scales = wavelets_scaling):
 
-    k0 = 6 #defines the size of the wavelet kernel, the bigger the smother, but eats up the edges of the data
+    k0 = 9 #defines the size of the wavelet kernel, the bigger the smother, but eats up the edges of the data
     wavelet = wa.MorletWavelet()
     central_periods = sampling_dt/np.array(frequencies)
     
-    if freq: scales = (central_periods * (1.0 / sampling_dt)) / wavelet.fourier_factor(k0)#(
+    if freq: scales = (central_periods ) / wavelet.fourier_factor(k0)#(
     else: scales = scales_fourier(wavelet.fourier_factor(k0), par_scales)
         
     
@@ -126,10 +123,10 @@ def niko_compute_wavelets(freq = True, par_scales = wavelets_scaling):
             )
         waves.append(wave[0])
         periods.append(period)
-        wav_scales.append(scale)
+        wav_scales.append(scale[0])
         cois.append(coi)
-    
-    return np.array(waves), periods, 1./np.array(scales), cois
+  
+    return np.array(waves), periods, 1./np.array(wav_scales), cois
     
 
 def amplitude_phase_wav(waves, name_file):
@@ -137,8 +134,8 @@ def amplitude_phase_wav(waves, name_file):
     amp = []
     phase = []
     for w in waves:
-        amp.append( np.abs(waves[0]) )#np.sqrt( coef[0].imag**2 + coef[0].real**2 )
-        phase.append(np.angle(waves[0]) )#np.arctan2( coef[0].imag, coef[0].real ) 
+        amp.append( np.abs(w) )#np.sqrt( coef[0].imag**2 + coef[0].real**2 )
+        phase.append(np.angle(w) )#np.arctan2( coef[0].imag, coef[0].real ) 
 
     np.save(name_file+'_amp.npy', amp, allow_pickle=True, fix_imports=True)
     np.save(name_file+'_pha.npy', phase, allow_pickle=True, fix_imports=True)
@@ -343,7 +340,7 @@ def plot_scalogram_fft_signal_together(time, signal, time_ave, signal_ave, freq,
     plot_signal_plus_average(top_ax, time, signal, time_ave, signal_ave, average_over = 5)
     
     #plot scalogram
-    yticks, ylim, im = plot_wavelet_scalogram( time, freq, wavelets, waveletname, bottom_left_ax )
+    yticks, ylim, im = plot_wavelet_scalogram(time, freq, wavelets, waveletname, bottom_left_ax )
     #position colorbar
     cbar_ax = fig.add_axes([0.9, 0.85, 0.01, 0.1])
     fig.colorbar(im, cax=cbar_ax, orientation="vertical")
@@ -359,7 +356,7 @@ def plot_wavelet_scalogram(time, freq, wavelets, waveletname = 'cmor', ax = plt.
 
     #prepare data
     power = (abs(wavelets)) ** 2
-    period = 1./freq#sampling_dt /freq
+    period = 1 / (freq)  # 1/freq
     
     #prepare contours levels 
     levels = [0.0625, 0.125, 0.25, 0.5, 1, 2, 4, 8]#[0.0625, 0.25,  1, 8]##[8, 16000, 32000, 128000]#
@@ -418,20 +415,20 @@ data = './data/output/'#'../data/' in case you are in the scripts folder
 
 name_ENSO = './data/imput/s_nino3418702020.csv'
 name_rain = './data/imput/s_allindiarain18712016.csv'
-#name_sig = 'rain_india_manuel'
-name_sig = 'ENSO_manuel'
+name_sig = 'rain_india_manuel'
+#name_sig = 'ENSO_manuel'
 #name_sig = 'ENSO_online'
-t, sig = css.read_ENSO_rain_manuel_files(name_ENSO)
+t, sig = css.read_ENSO_rain_manuel_files(name_rain)
 #sig, dates = css.online_ENSO_34()
 time_ave, signal_ave = css.get_ave_values(t, sig, 3)
-t, sig = css.get_ave_values(t, sig, 3)
+#t, sig = css.get_ave_values(t, sig, 3)
 
 print(sig, t)
 sampling_dt = t[1]-t[0]
 print(sampling_dt, t[-1], len(t))
 #frequencies = 1/np.arange(1, len(sig)//12, 8)
-frequencies = 1/np.arange(1, 256)
-
+frequencies = 1/np.arange(1, 128)
+#frequencies = np.array([  1., 1.1, 0.25, 0.125, 0.0039 ])/sampling_dt# np.arange(1, 256)*0.0039
 
 
 '''compute 1d fourier transformation'''
@@ -440,7 +437,7 @@ freq_spectrum, fft1d = FFT(t, sig)#fft(sig)/len(t)
 nyquist = int(len(fft1d))
 
 '''compute wavelet decomposition for 2 different methods'''
-kernel_pywl = 'cmor'#cmor1.5-1.0 #kind of wavelet kernel
+kernel_pywl = 'gaussian'#'cmor1.5-1.0'#'cmor'# #kind of wavelet kernel
 kernel_niko = 'morlet'
 bands_par = wavelets_scaling(num_bands=6)
 waves_pywt, freq_bands_pywt = pywt_compute_wavelets( freq = True, par_scales = bands_par )
@@ -459,7 +456,7 @@ rec_signal_niko = wav_reconstructed_signal(sig, waves_niko, no_amp=False, indivi
 
 '''plot signals and wavelets'''
 plot_signal_phase_fft(t, sig, freq_spectrum, frequencies, fft1d)
-plot_scalogram_fft_signal_together(t, sig, time_ave, signal_ave, freq_bands_pywt , waves_pywt, waveletname = kernel_pywl)
+plot_scalogram_fft_signal_together(t, sig, time_ave, signal_ave, freq_bands_niko , waves_niko, waveletname = kernel_niko)
 
 
 
@@ -467,11 +464,13 @@ plot_scalogram_fft_signal_together(t, sig, time_ave, signal_ave, freq_bands_pywt
 t, sig = css.online_ENSO_34()
 sampling_dt = t[1]-t[0]
 freq_spectrum, fft1d = FFT(t, sig)#fft(sig)/len(t)
-waves_pywt, freq_bands_pywt = pywt_compute_wavelets( freq = True, par_scales = bands_par )
+waves_niko, periods, freq_bands_niko, cois = niko_compute_wavelets( freq = True, par_scales = bands_par )
 plot_signal_phase_fft(time_ave, signal_ave, freq_spectrum, frequencies, fft1d)
-plot_scalogram_fft_signal_together(t, sig, time_ave, signal_ave, freq_bands_pywt, waves_pywt, waveletname = kernel_pywl)
+plot_scalogram_fft_signal_together(t, sig, time_ave, signal_ave, freq_bands_niko, waves_niko, waveletname = kernel_pywl)
 
-
+fig, ax = plt.subplots(1)
+ax.plot(freq_spectrum)
+ax.plot(freq_bands_niko)
 #plot_wavelet_scalogram(t, freq_bands_niko, waves_niko, waveletname = kernel_niko  )
 #plot_wavelet_scalogram(t, freq_bands_pywt, waves_pywt, waveletname = kernel_pywl  )
 #plot_waves_amplitude_phase_WL('python wavelet', sig, rec_signal_pywt, waves_pywt, freq_bands_pywt )
