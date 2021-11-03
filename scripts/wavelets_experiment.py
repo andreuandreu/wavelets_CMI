@@ -125,7 +125,7 @@ def niko_compute_wavelets(freq = True, par_scales = wavelets_scaling):
         wav_periods.append(period[0]*sampling_dt)
         wav_scales.append(scale[0]*sampling_dt)
         cois.append(coi)
-    print ('\n\n this is that', wav_periods,  '\n',wav_scales,'\n' )
+
     return np.array(waves), np.array(wav_periods), 1./np.array(wav_scales), cois
     
 
@@ -357,7 +357,7 @@ def plot_wavelet_scalogram(time, freq, wavelets, waveletname = 'cmor', ax = plt.
     #prepare data
     power = (abs(wavelets)) ** 2
     period = 1 / (freq)  # 1/freq
-    
+    print ('peeeriod', period, '\n')
     #prepare contours levels 
     levels = [0.0625, 0.125, 0.25, 0.5, 1, 2, 4, 8]#[0.0625, 0.25,  1, 8]##[8, 16000, 32000, 128000]#
     contourlevels = np.log2(levels)
@@ -416,8 +416,8 @@ data = './data/output/'#'../data/' in case you are in the scripts folder
 name_ENSO = './data/imput/s_nino3418702020.csv'
 name_rain = './data/imput/s_allindiarain18712016.csv'
 #name_sig = 'rain_india_manuel'
-name_sig = 'ENSO_manuel'
-#name_sig = 'ENSO_online'
+#name_sig = 'ENSO_manuel'
+name_sig = 'ENSO_online'
 t, sig = css.read_ENSO_rain_manuel_files(name_rain)
 #sig, dates = css.online_ENSO_34()
 time_ave, signal_ave = css.get_ave_values(t, sig, 3)
@@ -427,8 +427,8 @@ print(sig, t)
 sampling_dt = t[1]-t[0]
 print(sampling_dt, t[-1], len(t))
 #frequencies = 1/np.arange(1, len(sig)//12, 8)
-frequencies = 1/np.array([0.083, 0.1,0.5,0.9,1,2,4,5,6,7,8, 16, 32,64, 126])#
-#frequencies = np.array([  1., 1.1, 0.25, 0.125, 0.0039 ])/sampling_dt# np.arange(1, 256)*0.0039
+#frequencies = 1/np.array([0.083, 0.1,0.5,0.9,1,2,4,5,6,7,8, 16, 32,64, 126])#
+frequencies = 1/(np.arange(1, 126)*sampling_dt)  # *0.0039
 
 
 '''compute 1d fourier transformation'''
@@ -448,8 +448,6 @@ fig, ax = plt.subplots(1)
 ax.plot(freq_spectrum)
 ax.plot(np.arange(0, len(periods_niko))*len(freq_spectrum) /
         len(periods_niko), 1/periods_niko[::-1])
-print ('\n periods niko ', periods_niko, '\n')
-print('\n periods niko ', 1/periods_niko, '\n')
 
 name_files_pywt = data + name_sig +'_wavelet_vecors_pywt_'+ kernel_pywl
 amplitude_phase_wav(waves_pywt, name_files_pywt)
@@ -470,10 +468,15 @@ plot_scalogram_fft_signal_together(t, sig, time_ave, signal_ave, 1/periods_niko 
 #time_ave2, signal_ave2 = css.get_ave_values(t, sig, 3)
 t, sig = css.online_ENSO_34()
 sampling_dt = t[1]-t[0]
+frequencies = 1/(np.arange(1, 258)*0.25)
 freq_spectrum, fft1d = FFT(t, sig)#fft(sig)/len(t)
 waves_niko, periods_niko, freq_bands_niko, cois = niko_compute_wavelets( freq = True, par_scales = bands_par )
 plot_signal_phase_fft(time_ave, signal_ave, freq_spectrum, frequencies, fft1d)
-plot_scalogram_fft_signal_together(t, sig, time_ave, signal_ave, 1/periods_niko, waves_niko, waveletname = kernel_pywl)
+waves_pywt, freq_bands_pywt = pywt_compute_wavelets(
+    freq=True, par_scales=bands_par)
+#plot_scalogram_fft_signal_together(t, sig, time_ave, signal_ave, 1/periods_niko, waves_niko, waveletname = kernel_pywl)
+plot_scalogram_fft_signal_together(
+    t, sig, time_ave, signal_ave, freq_bands_pywt, waves_pywt, waveletname=kernel_pywl)
 
 
 
