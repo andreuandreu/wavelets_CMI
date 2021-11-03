@@ -1,5 +1,4 @@
 from numpy.core.numeric import base_repr
-from numpy.lib.npyio import mafromtxt
 from numpy.testing._private.utils import nulp_diff
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -78,22 +77,17 @@ def read_ENSO_rain_manuel_files(name):
     ''' read formated file'''
     sig, dates = np.genfromtxt(name ,delimiter=',' ,
            dtype="i4,f8,S10", names=['pos','dC_mon','DATE'],
-           skip_header=True, unpack=True, usecols=[1])
+           skip_header=True, unpack=True, usecols=[1, 2])
+
+    N = sig.shape[0]
     
-    #sig = [item for sub_list in allsig for item in sub_list]
-    #t0 = 1870
-    
-    
-    N = len(sig)
-    
-    t0 = parse(dates[0], fuzzy=True).year  # 1870#
+    t0 = parse(dates[0], fuzzy=True).year
     dt=1/12
     time = np.arange(0, N) * dt + t0 
-    #print('dates, from:', dates[0], 'to', dates[-1], 'in intervals of \n',  dates[1] )
+    print('dates, from:', dates[0], 'to', dates[-1], 'in intervals of \n',  dates[1] )
     #t = np.arange(1871, 1871+len(sig)//12, 1/12. ) 
-    if 'nino' in name: norm_fact = 20
-    else: norm_fact = 1
-    return  time, norm_fact*(sig/np.mean(sig)-1)
+    return  time, 1*(sig/np.mean(sig)-1)
+    
 
 
 
