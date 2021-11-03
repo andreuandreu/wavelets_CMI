@@ -104,11 +104,11 @@ def pywt_compute_wavelets(kernel_pywl = 'cmor', freq = True, par_scales =  wavel
 
 def niko_compute_wavelets(freq = True, par_scales = wavelets_scaling):
 
-    k0 = 9 #defines the size of the wavelet kernel, the bigger the smother, but eats up the edges of the data
+    k0 = 9. #defines the size of the wavelet kernel, the bigger the smother, but eats up the edges of the data
     wavelet = wa.MorletWavelet()
-    central_periods = sampling_dt/np.array(frequencies)
+    central_periods = 1./np.array(frequencies)
     
-    if freq: scales = (central_periods ) / wavelet.fourier_factor(k0)#(
+    if freq: scales = (central_periods )*(1.0/sampling_dt) / wavelet.fourier_factor(k0)#(
     else: scales = scales_fourier(wavelet.fourier_factor(k0), par_scales)
         
     
@@ -122,8 +122,8 @@ def niko_compute_wavelets(freq = True, par_scales = wavelets_scaling):
             sig, sampling_dt, pad=True, wavelet=wa.MorletWavelet(), dj =0,  s0 =s , j1 =0, k0=k0
             )
         waves.append(wave[0])
-        wav_periods.append(period[0])
-        wav_scales.append(scale[0])
+        wav_periods.append(period[0]*sampling_dt)
+        wav_scales.append(scale[0]*sampling_dt)
         cois.append(coi)
     print ('\n\n this is that', wav_periods,  '\n',wav_scales,'\n' )
     return np.array(waves), np.array(wav_periods), 1./np.array(wav_scales), cois
@@ -415,10 +415,10 @@ data = './data/output/'#'../data/' in case you are in the scripts folder
 
 name_ENSO = './data/imput/s_nino3418702020.csv'
 name_rain = './data/imput/s_allindiarain18712016.csv'
-name_sig = 'rain_india_manuel'
-#name_sig = 'ENSO_manuel'
+#name_sig = 'rain_india_manuel'
+name_sig = 'ENSO_manuel'
 #name_sig = 'ENSO_online'
-t, sig = css.read_ENSO_rain_manuel_files(name_rain)
+t, sig = css.read_ENSO_rain_manuel_files(name_ENSO)
 #sig, dates = css.online_ENSO_34()
 time_ave, signal_ave = css.get_ave_values(t, sig, 3)
 #t, sig = css.get_ave_values(t, sig, 3)
@@ -427,7 +427,7 @@ print(sig, t)
 sampling_dt = t[1]-t[0]
 print(sampling_dt, t[-1], len(t))
 #frequencies = 1/np.arange(1, len(sig)//12, 8)
-frequencies = 1/np.array([0.083, 0.1,0.5,0.9,1,2,4,5,6,7,8, 16, 32,64, 126])#1/np.arange(1, 128)
+frequencies = 1/np.array([0.083, 0.1,0.5,0.9,1,2,4,5,6,7,8, 16, 32,64, 126])#
 #frequencies = np.array([  1., 1.1, 0.25, 0.125, 0.0039 ])/sampling_dt# np.arange(1, 256)*0.0039
 
 
