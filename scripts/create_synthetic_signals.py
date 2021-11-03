@@ -76,21 +76,24 @@ def online_ENSO_34():
 
 def read_ENSO_rain_manuel_files(name):
     ''' read formated file'''
-    allsig= np.genfromtxt(name ,delimiter=',' ,
+    sig, dates = np.genfromtxt(name ,delimiter=',' ,
            dtype="i4,f8,S10", names=['pos','dC_mon','DATE'],
            skip_header=True, unpack=True, usecols=[1])
-    sig = [item for sub_list in allsig for item in sub_list]
-    #sig = np.array(allsig[0]).flatten().tolist()
-    print(sig[0])
-    #dates = np.transpose(allsig)[1]
+    
+    #sig = [item for sub_list in allsig for item in sub_list]
+    #t0 = 1870
+    
+    
     N = len(sig)
     
-    t0 = 1870#parse(dates[0], fuzzy=True).year
+    t0 = parse(dates[0], fuzzy=True).year  # 1870#
     dt=1/12
     time = np.arange(0, N) * dt + t0 
     #print('dates, from:', dates[0], 'to', dates[-1], 'in intervals of \n',  dates[1] )
     #t = np.arange(1871, 1871+len(sig)//12, 1/12. ) 
-    return  time, 20*(sig/np.mean(sig)-1)
+    if 'nino' in name: norm_fact = 20
+    else: norm_fact = 1
+    return  time, norm_fact*(sig/np.mean(sig)-1)
 
 
 
