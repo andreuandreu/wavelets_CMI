@@ -79,7 +79,8 @@ def scales_fourier(wav_kernel, par ): #base = 3, frequengit branch -dcy_spacing 
     
     return scales
 
-def pywt_compute_wavelets(kernel_pywl = 'cmor', freq = True, par_scales =  wavelets_scaling ):
+
+def pywt_compute_wavelets(kernel_pywl='cmor1.5-1.0', freq=True, par_scales=wavelets_scaling):
     
     
     if freq:
@@ -87,18 +88,17 @@ def pywt_compute_wavelets(kernel_pywl = 'cmor', freq = True, par_scales =  wavel
     else: 
         scales = scales_fourier( pywt.central_frequency(kernel_pywl), par_scales)
     
-
-    #scales = int(central_periods)
-    
-    padded_data =  sig
     coeffs, freq_pywt = pywt.cwt(
-                padded_data,
+                sig,
                 scales=scales,
-                wavelet=kernel_pywl,
-                sampling_period=sampling_dt,
+                wavelet= kernel_pywl,
+                sampling_period=1.0,
                 #axis=0,
             )
-    return coeffs, freq_pywt
+
+    #print('peeeriod or', 1/freq_pywt, '\n')
+
+    return coeffs, freq_pywt#*sampling_dt
 
 
 
@@ -129,7 +129,7 @@ def niko_compute_wavelets(freq = True, par_scales = wavelets_scaling):
     return np.array(waves), np.array(wav_periods), 1./np.array(wav_scales), cois
     
 
-def amplitude_phase_wav(waves, name_file):
+def write_amplitude_phase_wav(waves, name_file):
     
     amp = []
     phase = []
@@ -195,7 +195,7 @@ def wav_reconstructed_signal(sig, waves, no_amp = True, individual_amp = False, 
 def plot_signal_plus_average(ax, time, signal, time_ave, signal_ave, average_over = 5):
 
     # plotting the signal 
-    ax.set_xlabel('Time')
+    ax.set_xlabel('Time [' + unit + ']')
     ax.set_ylabel('Amplitude')
     ax.set_title("Signal + Time Average")
     ax.set_xlim([t[0], t[-1]])
@@ -213,12 +213,13 @@ def plot_signal_phase_fft(time, signal, freq_spectrum, frequencies, fft1d):
     fig, ax = plt.subplots(3,1)
     
     # plotting the signal 
-    ax[0].set_xlabel('Time')
+    ax[0].set_xlabel('Time [' + unit + ']')
     ax[0].set_ylabel('Amplitude')
     ax[0].set_title("Signal + Time Average")
     ax[0].set_xlim([time[0], time[-1]])
     ax[0].plot(time, signal, color ='green')
     ax[0].plot(t, sig, color ='r')
+
     #plotting the average of the signal
     time_ave, signal_ave = css.get_ave_values(time, signal, 6)
     #ax[0].plot(time_ave, signal_ave, label = 'time average (n={})'.format(6))
@@ -265,7 +266,7 @@ def plot_fft(ax, plot_direction='vertical', yticks=None, ylim=None):
         ax.set_yticks(np.log2(yticks))
         ax.set_yticklabels(yticks)
         ax.invert_yaxis()
-        ax.set_ylim(ylim[0], -1)
+        ax.set_ylim(ylim[0], ylim[-1])
 
         #fft with frequencies and linear scale
         ax2 = ax.twinx()
@@ -327,7 +328,7 @@ def plot_comparison_methods(wav1, wav2):
 
 
 
-def plot_scalogram_fft_signal_together(time, signal, time_ave, signal_ave, freq, wavelets, waveletname):
+def plot_scalogram_fft_signal_together(time, signal, freq, wavelets, unit, waveletname):
    
     #prepare plot
     fig = plt.figure(figsize=(12,12))
@@ -337,27 +338,27 @@ def plot_scalogram_fft_signal_together(time, signal, time_ave, signal_ave, freq,
     bottom_right_ax = fig.add_subplot(spec[1:, 5])
 
     #plot signal
+    time_ave, signal_ave = css.get_ave_values(t, sig, 3)
     plot_signal_plus_average(top_ax, time, signal, time_ave, signal_ave, average_over = 5)
     
     #plot scalogram
-    yticks, ylim, im = plot_wavelet_scalogram(time, freq, wavelets, waveletname, bottom_left_ax )
+    yticks, ylim, im = plot_wavelet_scalogram(time, freq, wavelets, unit, waveletname, bottom_left_ax )
     #position colorbar
     cbar_ax = fig.add_axes([0.9, 0.85, 0.01, 0.1])
     fig.colorbar(im, cax=cbar_ax, orientation="vertical")
     
     #plot fft
     plot_fft(bottom_right_ax, plot_direction='vertical', yticks=yticks, ylim=ylim)
-    bottom_right_ax.set_ylabel('Period [years]', fontsize=14)
+    bottom_right_ax.set_ylabel('Period [' + unit + ']',  fontsize=14)
     plt.tight_layout()
  
 
 
-def plot_wavelet_scalogram(time, freq, wavelets, waveletname = 'cmor', ax = plt.subplots(figsize=(15, 10))  ):
+def plot_wavelet_scalogram(time, freq, wavelets, unit, waveletname = 'cmor', ax = plt.subplots(figsize=(15, 10))  ):
 
     #prepare data
     power = (abs(wavelets)) ** 2
-    period = 1 / (freq)  # 1/freq
-    print ('peeeriod', period, '\n')
+    period = 1.0/ (freq)  # 1/freq
     #prepare contours levels 
     levels = [0.0625, 0.125, 0.25, 0.5, 1, 2, 4, 8]#[0.0625, 0.25,  1, 8]##[8, 16000, 32000, 128000]#
     contourlevels = np.log2(levels)
@@ -366,8 +367,8 @@ def plot_wavelet_scalogram(time, freq, wavelets, waveletname = 'cmor', ax = plt.
     
     #prepare axis tags
     ax.set_title('Wavelet '+waveletname+' Transform/time Power Spectrum)', fontsize=20)
-    ax.set_ylabel('Scale (years)', fontsize=18)
-    ax.set_xlabel('Time', fontsize=18)
+    ax.set_ylabel('Scale [' + unit +']', fontsize=18)
+    ax.set_xlabel('Time [' + unit + ']', fontsize=18)
     
     #arrange y axis scales
     yticks = 2**np.arange(np.ceil(np.log2(period.min())), np.ceil(np.log2(period.max())))
@@ -375,7 +376,7 @@ def plot_wavelet_scalogram(time, freq, wavelets, waveletname = 'cmor', ax = plt.
     ax.set_yticklabels(yticks)
     ax.invert_yaxis()
     ylim = ax.get_ylim()
-    ax.set_ylim(ylim[0], -1)
+    ax.set_ylim(ylim[0], ylim[-1])
     
     return yticks, ylim, im
 
@@ -398,38 +399,41 @@ def FFT(t, sig):
     Y = abs(fft(sig))[:k]
     return (freq_escale, Y)
 
-
+'''folder for data output'''
+data = './data/output/'  # '../data/' in case you are in the scripts folder
 
 '''compute signal'''
-seed_freq = [ 1/20., 1/100, 1/6] #freq, they shall be below one
-amplitudes = [0.5, 1, 2]
-
+#seed_freq = [ 1/20., 1/100, 1/6] #freq, they shall be below one
+#amplitudes = [0.5, 1, 2]
 #sampling_dt = 1
 #t = np.arange(600) 
 #sig = css.create_signal(seed_freq, amplitudes, t, gauss = True, noise = True )#
 
-data = './data/output/'#'../data/' in case you are in the scripts folder
-#name_sig = 'ENSO34_1880-2020'
+
+name_source = {
+    'rain_india_manuel': './data/imput/s_allindiarain18712016.csv',
+    'ENSO_manuel' : './data/imput/s_nino3418702020.csv',
+    'ENSO_online': 'http://paos.colorado.edu/research/wavelets/wave_idl/sst_nino3.dat'
+}
+
+sig_tag = 'rain_india_manuel'
+t, sig = css.read_ENSO_rain_manuel_files(name_source[sig_tag])
 #t, sig = css.online_ENSO_34()
 
+if 'ENSO' in sig_tag:
+    sig = sig*20
 
-name_ENSO = './data/imput/s_nino3418702020.csv'
-name_rain = './data/imput/s_allindiarain18712016.csv'
-#name_sig = 'rain_india_manuel'
-#name_sig = 'ENSO_manuel'
-name_sig = 'ENSO_online'
-t, sig = css.read_ENSO_rain_manuel_files(name_rain)
-#sig, dates = css.online_ENSO_34()
-time_ave, signal_ave = css.get_ave_values(t, sig, 3)
+
+
+t = np.arange(0, len(sig))
 #t, sig = css.get_ave_values(t, sig, 3)
 
-print(sig, t)
-sampling_dt = t[1]-t[0]
-print(sampling_dt, t[-1], len(t))
-#frequencies = 1/np.arange(1, len(sig)//12, 8)
+'''characteristics of the signal and the processing'''
+unit = 'month'
+sampling_dt = 1# t[1]-t[0]
+print('\n sampling period, last time and length of time', sampling_dt, t[-1], len(t), '\n')
 #frequencies = 1/np.array([0.083, 0.1,0.5,0.9,1,2,4,5,6,7,8, 16, 32,64, 126])#
-frequencies = 1/(np.arange(1, 126)*sampling_dt)  # *0.0039
-
+frequencies = 1/((np.arange(1, 256)*sampling_dt))  #
 
 '''compute 1d fourier transformation'''
 #fft, ifft
@@ -438,10 +442,11 @@ nyquist = int(len(fft1d))
 
 
 '''compute wavelet decomposition for 2 different methods'''
-kernel_pywl = 'gaussian'#'cmor1.5-1.0'#'cmor'# #kind of wavelet kernel
+kernel_pywl = 'cmor1.5-1.0'  # 'cmor'# #kind of wavelet kernel'gaussian'#
 kernel_niko = 'morlet'
 bands_par = wavelets_scaling(num_bands=6)
-waves_pywt, freq_bands_pywt = pywt_compute_wavelets( freq = True, par_scales = bands_par )
+waves_pywt, freq_bands_pywt = pywt_compute_wavelets(
+    kernel_pywl=kernel_pywl, freq=True,  par_scales=bands_par)
 waves_niko, periods_niko, freq_bands_niko, cois = niko_compute_wavelets(freq = True, par_scales =  bands_par)
 
 fig, ax = plt.subplots(1)
@@ -449,36 +454,47 @@ ax.plot(freq_spectrum)
 ax.plot(np.arange(0, len(periods_niko))*len(freq_spectrum) /
         len(periods_niko), 1/periods_niko[::-1])
 
-name_files_pywt = data + name_sig +'_wavelet_vecors_pywt_'+ kernel_pywl
-amplitude_phase_wav(waves_pywt, name_files_pywt)
+name_files_pywt = data + sig_tag +'_wavelet_vecors_pywt_'+ kernel_pywl
+write_amplitude_phase_wav(waves_pywt, name_files_pywt)
+
+
 
 '''reconstruct the signal form the wavelets'''
-
 rec_signal_pywt = wav_reconstructed_signal(sig, waves_pywt, no_amp=False, individual_amp=True)
 rec_signal_niko = wav_reconstructed_signal(sig, waves_niko, no_amp=False, individual_amp=True)
-#amp, phase = amplitude_phase_wav(coeffs)
-#amp2, phase2 = amplitude_phase_wav(waves)
+
+
 
 '''plot signals and wavelets'''
 plot_signal_phase_fft(t, sig, freq_spectrum, frequencies, fft1d)
-plot_scalogram_fft_signal_together(t, sig, time_ave, signal_ave, 1/periods_niko , waves_niko, waveletname = kernel_niko)
+plot_scalogram_fft_signal_together(t, sig,  1/periods_niko , waves_niko, unit, waveletname = kernel_niko)
+#plot_scalogram_fft_signal_together(
+#    t, sig, freq_bands_pywt, waves_pywt, unit, waveletname=kernel_pywl)
 
 
 
 #time_ave2, signal_ave2 = css.get_ave_values(t, sig, 3)
-t, sig = css.online_ENSO_34()
-sampling_dt = t[1]-t[0]
-frequencies = 1/(np.arange(1, 258)*0.25)
+#t, sig = css.online_ENSO_34()
+#unit = 'quarter'
+unit = 'month'
+sig_tag = 'ENSO_manuel'
+sampling_dt = 1.0# t[1]-t[0]
+t, sig = css.read_ENSO_rain_manuel_files(name_source[sig_tag])
+if 'ENSO' in sig_tag:
+    sig = sig*20
+
+t = np.arange(0, len(sig))
+frequencies = 1/(np.arange(1, 528)*sampling_dt)
+
 freq_spectrum, fft1d = FFT(t, sig)#fft(sig)/len(t)
 waves_niko, periods_niko, freq_bands_niko, cois = niko_compute_wavelets( freq = True, par_scales = bands_par )
-plot_signal_phase_fft(time_ave, signal_ave, freq_spectrum, frequencies, fft1d)
-waves_pywt, freq_bands_pywt = pywt_compute_wavelets(
+plot_signal_phase_fft( t, sig, freq_spectrum, frequencies, fft1d)
+waves_pywt, freq_bands_pywt = pywt_compute_wavelets(kernel_pywl=kernel_pywl,
     freq=True, par_scales=bands_par)
-#plot_scalogram_fft_signal_together(t, sig, time_ave, signal_ave, 1/periods_niko, waves_niko, waveletname = kernel_pywl)
-plot_scalogram_fft_signal_together(
-    t, sig, time_ave, signal_ave, freq_bands_pywt, waves_pywt, waveletname=kernel_pywl)
+plot_scalogram_fft_signal_together(t, sig, 1/periods_niko, waves_niko, unit, waveletname = kernel_pywl)
 
-
+#plot_scalogram_fft_signal_together(
+#    t, sig,freq_bands_pywt, waves_pywt, unit, waveletname=kernel_pywl)
 
 #plot_wavelet_scalogram(t, freq_bands_niko, waves_niko, waveletname = kernel_niko  )
 #plot_wavelet_scalogram(t, freq_bands_pywt, waves_pywt, waveletname = kernel_pywl  )

@@ -60,9 +60,8 @@ def get_ave_values(xvalues, yvalues, n = 5):
     
     return x_ave, y_ave
 
-def online_ENSO_34():
+def online_ENSO_34(dataset):
 
-    dataset = "http://paos.colorado.edu/research/wavelets/wave_idl/sst_nino3.dat"
     df_ENSO = pd.read_table(dataset)
     N = df_ENSO.shape[0]
     t0=1871
@@ -88,10 +87,9 @@ def read_ENSO_rain_manuel_files(name):
     time = np.arange(0, N) * dt + t0 
     print('dates, from:', dates[0], 'to', dates[-1], 'in intervals of \n',  dates[1] )
     #t = np.arange(1871, 1871+len(sig)//12, 1/12. ) 
-    if 'nino' in name: norm_fac = 20
-    else: norm_fac = 1.0
+
     
-    return  time, norm_fac*(sig/np.mean(sig)-1)
+    return  time, sig/np.mean(sig)-1
     
 
 
