@@ -103,7 +103,7 @@ def pywt_compute_wavelets(kernel_name='cmor1.5-1.0', freq=True, par_scales=wavel
     return coeffs, freq_pywt#*sampling_dt
 
 
-def niko_compute_wavelets(sig, kernel_name = 'morlet' , freq = True, par_scales = wavelets_scaling):
+def niko_compute_wavelets( kernel_name = 'morlet' , freq = True, par_scales = wavelets_scaling):
 
     k0 = 9. #defines the size of the wavelet kernel, the bigger the smother, but eats up the edges of the data
     if kernel_name == 'morlet':
@@ -493,9 +493,10 @@ t = np.arange(0, len(sig))
 frequencies = 1/(np.arange(1, 528)*sampling_dt)
 
 freq_spectrum, fft1d = FFT(t, sig)#fft(sig)/len(t)
-waves_niko, periods_niko, freq_bands_niko, cois = niko_compute_wavelets( freq = True, par_scales = bands_par )
+waves_niko, periods_niko, freq_bands_niko, cois = niko_compute_wavelets(
+    kernel_name=kernel_niko, freq=True, par_scales=bands_par)
 plot_signal_phase_fft( t, sig, freq_spectrum, frequencies, fft1d)
-waves_pywt, freq_bands_pywt = pywt_compute_wavelets(kernel_pywl=kernel_pywl,
+waves_pywt, freq_bands_pywt = pywt_compute_wavelets(kernel_name=kernel_pywl,
     freq=True, par_scales=bands_par)
 plot_scalogram_fft_signal_together(t, sig, 1/periods_niko, waves_niko, unit, waveletname = kernel_pywl)
 
