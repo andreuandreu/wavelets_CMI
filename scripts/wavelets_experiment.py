@@ -408,29 +408,31 @@ def FFT(t, sig):
 data = './data/output/'  # '../data/' in case you are in the scripts folder
 
 '''compute signal'''
-#seed_freq = [ 1/20., 1/100, 1/6] #freq, they shall be below one
-#amplitudes = [0.5, 1, 2]
+seed_freq = [ 1/20., 1/100, 1/6] #freq, they shall be below one
+amplitudes = [0.5, 1, 2]
 #sampling_dt = 1
-#t = np.arange(600) 
-#sig = css.create_signal(seed_freq, amplitudes, t, gauss = True, noise = True )#
+t = np.arange(600) 
+gauss = True
+noise = True
+t, sig = css.create_signal(seed_freq, amplitudes, t, gauss = gauss, noise = noise )#
 
 
 name_source = {
     'rain_india_manuel': './data/imput/s_allindiarain18712016.csv',
     'ENSO_manuel' : './data/imput/s_nino3418702020.csv',
-    'ENSO_online': 'http://paos.colorado.edu/research/wavelets/wave_idl/sst_nino3.dat'
+    'ENSO_online': 'http://paos.colorado.edu/research/wavelets/wave_idl/sst_nino3.dat',
+    'synthetic': 'gauss_' + str(gauss)[0] + 'noise_' + str(noise)[0]
 }
 
-sig_tag = 'rain_india_manuel'
-t, sig = css.read_ENSO_rain_manuel_files(name_source[sig_tag])
+#sig_tag = 'rain_india_manuel'
+sig_tag = 'synthetic'
+#t, sig = css.read_ENSO_rain_manuel_files(name_source[sig_tag])
 #t, sig = css.online_ENSO_34()
 
-if 'ENSO' in sig_tag:
+if sig_tag == 'ENSO_manuel':
     sig = sig*20
 
-
-
-t = np.arange(0, len(sig))
+#t = np.arange(0, len(sig))
 #t, sig = css.get_ave_values(t, sig, 3)
 
 '''characteristics of the signal and the processing'''
@@ -480,14 +482,14 @@ plot_scalogram_fft_signal_together(t, sig,  1/periods_niko , waves_niko, unit, w
 
 
 #time_ave2, signal_ave2 = css.get_ave_values(t, sig, 3)
-#t, sig = css.online_ENSO_34()
-#unit = 'quarter'
-unit = 'month'
-sig_tag = 'ENSO_manuel'
+t, sig = css.online_ENSO_34(name_source['ENSO_online'])
+unit = 'quarter'
+#unit = 'month'
+#sig_tag = 'ENSO_manuel'
 sampling_dt = 1.0# t[1]-t[0]
-t, sig = css.read_ENSO_rain_manuel_files(name_source[sig_tag])
-if 'ENSO' in sig_tag:
-    sig = sig*20
+#t, sig = css.read_ENSO_rain_manuel_files(name_source[sig_tag])
+#if 'ENSO' in sig_tag:
+#    sig = sig*20
 
 t = np.arange(0, len(sig))
 frequencies = 1/(np.arange(1, 528)*sampling_dt)
