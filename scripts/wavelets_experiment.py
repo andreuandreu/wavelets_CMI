@@ -10,31 +10,33 @@ import numpy as np
 from numpy.fft import fft, ifft
 import pywt
 from scipy import signal
-import create_synthetic_signals as css
+import provide_signals as css
 
 
 '''
 Functions to decompose a signal into its component continuos wavelets and reconstruct it
 
 
-- 1st provide a univaluated signal, chose one function from the create_synthetic_signals script
+- 1st provide a univaluated signal, chose one function from the provide_signals script
 
-- 2nd do the fast fourier transfrom of the signal using the FFT(t, sig) function
+- 2nd settle in the units of the signal by chosing a value for sampling_dt
 
-- 3rd compute wavelet decomposition for one or both provided methods
-    niko_compute_wavelets(freq = True)
+- 3rd do the fast fourier transfrom of the signal using the FFT(t, sig) function
+
+- 4th compute wavelet decomposition for one or both provided methods
+    pywt_compute_wavelets( kernel_pywl=kernel_pywl, freq=True,  par_scales=bands_par)
     pywt_compute_wavelets(freq = True)
     if frequency is true, then the decomposition would be around the provided list of frequencies
     otherwise it will compute a discrete set of frequencies in base 2 to decompose
     in this case one has to initialize the values of the desired intervals into the wavelets_scaling class
 
-- 4th reconstruct the signal using function  wav_reconstructed_signal(sig, waves_pywt, no_amp=False, individual_amp=True)
+- 5th reconstruct the signal using function  wav_reconstructed_signal(sig, waves_pywt, no_amp=False, individual_amp=True)
     here 3 methods of reconstruction can be probided that rescale the amplitudes, 
         no_amplitude: does not rescale
         global_amp: rescales the sum of the wavelets to the amplitude of the signal
         individual_amp: rescales each wavelet to the amplitude of the signal
 
-- 5th plots
+- 6th plots
         plot_signal_phase_fft(time, signal): signal + phase transform + FFt in frequency and wavenumber domain
         plot_waves_amplitude_phase_WL(): reconstruction of the signal and each wavelet (phase and amplitude) corresponding to the provided frequency
         plot_comparison_methods(): to compare the wavelets and reconstructions of two different wavelet methods ->in development<-   
@@ -80,18 +82,18 @@ def scales_fourier(wav_kernel, par ): #base = 3, frequengit branch -dcy_spacing 
     return scales
 
 
-def pywt_compute_wavelets(kernel_pywl='cmor1.5-1.0', freq=True, par_scales=wavelets_scaling):
+def pywt_compute_wavelets(kernel_name='cmor1.5-1.0', freq=True, par_scales=wavelets_scaling):
     
     
     if freq:
         scales = 1/frequencies
     else: 
-        scales = scales_fourier( pywt.central_frequency(kernel_pywl), par_scales)
+        scales = scales_fourier( pywt.central_frequency(kernel_name), par_scales)
     
     coeffs, freq_pywt = pywt.cwt(
                 sig,
                 scales=scales,
-                wavelet= kernel_pywl,
+                wavelet= kernel_name,
                 sampling_period=1.0,
                 #axis=0,
             )
@@ -101,15 +103,18 @@ def pywt_compute_wavelets(kernel_pywl='cmor1.5-1.0', freq=True, par_scales=wavel
     return coeffs, freq_pywt#*sampling_dt
 
 
-
-def niko_compute_wavelets(freq = True, par_scales = wavelets_scaling):
+def niko_compute_wavelets(sig, kernel_name = 'morlet' , freq = True, par_scales = wavelets_scaling):
 
     k0 = 9. #defines the size of the wavelet kernel, the bigger the smother, but eats up the edges of the data
-    wavelet = wa.MorletWavelet()
+    if kernel_name == 'morlet':
+        wavelet_kernel = wa.MorletWavelet()
+    else:
+        print('give me a good wavelet kernel name for niko, duh!!')
+        exit()
     central_periods = 1./np.array(frequencies)
     
-    if freq: scales = (central_periods )*(1.0/sampling_dt) / wavelet.fourier_factor(k0)#(
-    else: scales = scales_fourier(wavelet.fourier_factor(k0), par_scales)
+    if freq: scales = (central_periods )*(1.0/sampling_dt) / wavelet_kernel.fourier_factor(k0)#(
+    else: scales = scales_fourier(wavelet_kernel.fourier_factor(k0), par_scales)
         
     
     waves = []
@@ -119,7 +124,7 @@ def niko_compute_wavelets(freq = True, par_scales = wavelets_scaling):
     
     for s in scales:
         wave, period, scale, coi = wa.continous_wavelet( 
-            sig, sampling_dt, pad=True, wavelet=wa.MorletWavelet(), dj =0,  s0 =s , j1 =0, k0=k0
+            sig, sampling_dt, pad=True, wavelet=wavelet_kernel, dj =0,  s0 =s , j1 =0, k0=k0
             )
         waves.append(wave[0])
         wav_periods.append(period[0]*sampling_dt)
@@ -446,8 +451,9 @@ kernel_pywl = 'cmor1.5-1.0'  # 'cmor'# #kind of wavelet kernel'gaussian'#
 kernel_niko = 'morlet'
 bands_par = wavelets_scaling(num_bands=6)
 waves_pywt, freq_bands_pywt = pywt_compute_wavelets(
-    kernel_pywl=kernel_pywl, freq=True,  par_scales=bands_par)
-waves_niko, periods_niko, freq_bands_niko, cois = niko_compute_wavelets(freq = True, par_scales =  bands_par)
+    kernel_name=kernel_pywl, freq=True,  par_scales=bands_par)
+waves_niko, periods_niko, freq_bands_niko, cois = niko_compute_wavelets(
+    kernel_name =  kernel_niko, freq = True, par_scales =  bands_par)
 
 fig, ax = plt.subplots(1)
 ax.plot(freq_spectrum)
