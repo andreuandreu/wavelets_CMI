@@ -414,7 +414,7 @@ amplitudes = [0.5, 1, 2]
 t = np.arange(600) 
 gauss = True
 noise = True
-t, sig = css.create_signal(seed_freq, amplitudes, t, gauss = gauss, noise = noise )#
+#t, sig = css.create_signal(seed_freq, amplitudes, t, gauss = gauss, noise = noise )#
 
 
 name_source = {
@@ -424,15 +424,15 @@ name_source = {
     'synthetic': 'gauss_' + str(gauss)[0] + 'noise_' + str(noise)[0]
 }
 
-#sig_tag = 'rain_india_manuel'
-sig_tag = 'synthetic'
-#t, sig = css.read_ENSO_rain_manuel_files(name_source[sig_tag])
+sig_tag = 'rain_india_manuel'
+#sig_tag = 'synthetic'
+t, sig = css.read_ENSO_rain_manuel_files(name_source[sig_tag])
 #t, sig = css.online_ENSO_34()
 
 if sig_tag == 'ENSO_manuel':
     sig = sig*20
 
-#t = np.arange(0, len(sig))
+t = np.arange(0, len(sig))
 #t, sig = css.get_ave_values(t, sig, 3)
 
 '''characteristics of the signal and the processing'''

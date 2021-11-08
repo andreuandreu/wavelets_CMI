@@ -15,26 +15,17 @@ import provide_signals as css
 Functions to decompose a signal into its component continuos wavelets and reconstruct it
 
 
-- 1st provide a univaluated signal, chose one function from the provide_signals script
 
-- 2nd settle in the units of the signal by chosing a value for sampling_dt
 
-- 3rd do the fast fourier transfrom of the signal using the FFT(t, sig) function
-
-- 4th compute wavelet decomposition for one or both provided methods
-    pywt_compute_wavelets( kernel_pywl=kernel_pywl, freq=True,  par_scales=bands_par)
-    pywt_compute_wavelets(freq = True)
-    if frequency is true, then the decomposition would be around the provided list of frequencies
-    otherwise it will compute a discrete set of frequencies in base 2 to decompose
-    in this case one has to initialize the values of the desired intervals into the wavelets_scaling class
-
-- 5th reconstruct the signal using function  wav_reconstructed_signal(sig, waves_pywt, no_amp=False, individual_amp=True)
+-  compute wavelet decomposition for one or both provided methods
+    pywt_compute_wavelets( )
+    niko_compute_wavelets( )
+    
+-   reconstruct the signal using function  wav_reconstructed_signal(sig, waves_pywt, no_amp=False, individual_amp=True)
     here 3 methods of reconstruction can be probided that rescale the amplitudes, 
         no_amplitude: does not rescale
         global_amp: rescales the sum of the wavelets to the amplitude of the signal
         individual_amp: rescales each wavelet to the amplitude of the signal
-
-
 '''
 
 
@@ -56,11 +47,13 @@ class wavelets_scaling:
         self.fourier_factor = fourier_factor
    
 
-    
-def scales_fourier(wav_kernel, par ): #base = 3, frequengit branch -dcy_spacing = 0.001, num_bands = 4, fourier_factor = 0.25
+# base = 3, frequengit branch -dcy_spacing = 0.001, num_bands = 4, fourier_factor = 0.25
+def scales_fourier(freq_spectrum, fft1d, sampling_dt, wav_kernel, par=wavelets_scaling()):
     '''
     provides automatic scaling for wavelet spectral frequencies in log2 spacing 
     by using the last fourier mode as initial seed
+    :param freq_spectrum: the spectrum of frequencies where the wavelet will be computed
+    :param fft1d: the Fourier transform of a guiven signal to be analysed 
     :param wav_kernel: provide the wavelet kernel in order to set the scale
     :param par: class containing the parameters to be used (base, frequency_spacing, num_bands_ fourier_factor)
     :type par: class with self initializing parameter values
@@ -68,7 +61,7 @@ def scales_fourier(wav_kernel, par ): #base = 3, frequengit branch -dcy_spacing 
     
     print(par.frequency_spacing, par.base, par.num_bands)
     scales = []
-    aux = 1/freq_spectrum[  np.where(fft1d/len(t) > 0.05)[0][-1] ] #last frequency of  the highest fourier mode    
+    aux = 1/freq_spectrum[  np.where(fft1d/len(fft1d) > 0.05)[0][-1] ] #last frequency of  the highest fourier mode    
     s0 = (par.fourier_factor * aux * ( 1.0 / sampling_dt)) / wav_kernel # 
     #int(np.where(fft1d == max(fft1d[0:nyquist]))[0]/2 )/len(t))
     for i in range(par.num_bands):
@@ -77,14 +70,18 @@ def scales_fourier(wav_kernel, par ): #base = 3, frequengit branch -dcy_spacing 
     return scales
 
 
-def pywt_compute_wavelets(sig, kernel_name='cmor1.5-1.0', freq=True, par_scales=wavelets_scaling):
+def pywt_compute_wavelets(sig, frequencies, kernel_name='cmor1.5-1.0'):
     
-    
-    if freq:
-        scales = 1/frequencies
-    else: 
-        scales = scales_fourier( pywt.central_frequency(kernel_name), par_scales)
-    
+    '''
+    a warp to compute the wavelet using the pywl package. 
+
+    :param sig: the signal to be analysed
+    :param frequencies: the individual frequencies where the wavelet shall be computed,
+                        be aware of the units of that!!
+    :param kernel_name: the wavelet kernel to be used
+    :param freq: 
+    '''
+    scales = 1/frequencies
     coeffs, freq_pywt = pywt.cwt(
                 sig,
                 scales=scales,
@@ -94,11 +91,10 @@ def pywt_compute_wavelets(sig, kernel_name='cmor1.5-1.0', freq=True, par_scales=
             )
 
     #print('peeeriod or', 1/freq_pywt, '\n')
-
     return coeffs, freq_pywt#*sampling_dt
 
 
-def niko_compute_wavelets(sig, kernel_name = 'morlet' , freq = True, par_scales = wavelets_scaling):
+def niko_compute_wavelets(sig, frequencies, sampling_dt, kernel_name = 'morlet' ):
 
     k0 = 9. #defines the size of the wavelet kernel, the bigger the smother, but eats up the edges of the data
     if kernel_name == 'morlet':
@@ -108,10 +104,8 @@ def niko_compute_wavelets(sig, kernel_name = 'morlet' , freq = True, par_scales 
         exit()
     central_periods = 1./np.array(frequencies)
     
-    if freq: scales = (central_periods )*(1.0/sampling_dt) / wavelet_kernel.fourier_factor(k0)#(
-    else: scales = scales_fourier(wavelet_kernel.fourier_factor(k0), par_scales)
+    scales = (central_periods )*(1.0/sampling_dt) / wavelet_kernel.fourier_factor(k0)#(
         
-    
     waves = []
     wav_periods = []
     wav_scales = []
@@ -194,8 +188,6 @@ def wav_reconstructed_signal(sig, waves, no_amp = True, individual_amp = False, 
     if global_amp: return lin_reg_rescaling(rec_signal, slopes_vector)
 
 
-
-
 def FFT(t, sig):
     '''
     compute the fast fourier transform and the frequency scale of the transform
@@ -212,68 +204,3 @@ def FFT(t, sig):
     freq_escale = np.arange(k) / (n*Δ)
     Y = abs(fft(sig))[:k]
     return (freq_escale, Y)
-
-'''folder for data output'''
-data = './data/output/'  # '../data/' in case you are in the scripts folder
-
-'''compute signal
-seed_freq = [1/20., 1/100, 1/6]  # freq, they shall be below one
-amplitudes = [0.5, 1, 2]
-#sampling_dt = 1
-t = np.arange(600)
-
-t, sig = css.create_signal(seed_freq, amplitudes, t, gauss=gauss, noise=noise)
-sig_tag = 'synthetic'
-'''
-gauss = True
-noise = True
-name_source = {
-    'rain_india_manuel': './data/imput/s_allindiarain18712016.csv',
-    'ENSO_manuel': './data/imput/s_nino3418702020.csv',
-    'ENSO_online': 'http://paos.colorado.edu/research/wavelets/wave_idl/sst_nino3.dat',
-    'synthetic': 'gauss_' + str(gauss)[0] + 'noise_' + str(noise)[0]
-}
-
-#sig_tag = 'rain_india_manuel'
-sig_tag = 'ENSO_manuel'
-t, sig = css.read_ENSO_rain_manuel_files(name_source[sig_tag])
-#t, sig = css.online_ENSO_34()
-
-if sig_tag == 'ENSO_manuel':
-    sig = sig*20
-
-time = np.arange(0, len(sig))
-#t, sig = css.get_ave_values(t, sig, 3)
-
-'''characteristics of the signal and the processing'''
-unit = 'month'
-sampling_dt = 1# t[1]-t[0]
-print('\n sampling period, last time and length of time', sampling_dt, time[-1], len(time), '\n')
-#frequencies = 1/np.array([0.083, 0.1,0.5,0.9,1,2,4,5,6,7,8, 16, 32,64, 126])#
-frequencies = 1/((np.arange(1, 256)*sampling_dt))  #
-
-'''compute 1d fourier transformation'''
-#fft, ifft
-freq_spectrum, fft1d = FFT(time, sig)#fft(sig)/len(t)
-nyquist = int(len(fft1d))
-
-
-'''compute wavelet decomposition for 2 different methods'''
-kernel_pywl = 'cmor1.5-1.0'  # 'cmor'# #kind of wavelet kernel'gaussian'#
-kernel_niko = 'morlet'
-bands_par = wavelets_scaling(num_bands=6)
-waves_pywt, freq_bands_pywt = pywt_compute_wavelets( sig,
-    kernel_name=kernel_pywl, freq=True,  par_scales=bands_par)
-waves_niko, periods_niko, freq_bands_niko, cois = niko_compute_wavelets( sig,
-    kernel_name =  kernel_niko, freq = True, par_scales =  bands_par)
-
-
-'''satore the amplitude and phase of the waveleets in numpy files'''
-name_files_pywt = data + sig_tag +'_'+ unit +'_wavelet_vecors_pywt_'+ kernel_pywl 
-write_amplitude_phase_wav(waves_pywt, name_files_pywt)
-
-
-
-'''reconstruct the signal form the wavelets'''
-rec_signal_pywt = wav_reconstructed_signal(sig, waves_pywt, no_amp=False, individual_amp=True)
-rec_signal_niko = wav_reconstructed_signal(sig, waves_niko, no_amp=False, individual_amp=True)
