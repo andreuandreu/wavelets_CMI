@@ -122,6 +122,13 @@ def niko_compute_wavelets(sig, frequencies, sampling_dt, kernel_name = 'morlet' 
 
     return np.array(waves), np.array(wav_periods), 1./np.array(wav_scales), cois
     
+def read_wavelets(name_base):
+
+
+    amplitude = np.load(name_base+'_amp.npy', fix_imports=False)
+    phase = np.load(name_base+'_pha.npy', fix_imports=False)
+
+    return amplitude, phase
 
 def write_amplitude_phase_wav(waves, name_file):
     

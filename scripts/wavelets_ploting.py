@@ -4,10 +4,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 
-
 import numpy as np
 from numpy.fft import fft, ifft
-
+import wavelets_computation as wc
 import provide_signals as css
 
 '''
@@ -58,23 +57,24 @@ def plot_signal_phase_fft(time, signal, unit, freq_spectrum, frequencies, fft1d)
     ax[2].scatter(frequencies, np.ones(len(frequencies)))
     ax[2].set_yscale('log')
     ax[2].set_xscale('log')
-
+    ax[2].set_ylim(10e-4, 1.5)
     # plotting the fft of the signal in scale/length and frequency domain and log scale
     ax2 = ax[2].twiny()
     ax2.plot(1./freq_spectrum, fft1d/len(time), c='r')
     #ax2.scatter(1./np.array(freq_bands_niko), np.ones( len(freq_bands_niko) ), c='r')
     #ax2.semilogx(len(t)/freq_spectrum**2, fft1d/len(t), c='r')
+    ax2.set_xscale('log')
     ax2.set_xlabel('wavenum', color='r')
     #ax[2].loglog(frequencies, 'b')
     plt.tight_layout()
 
 
-def plot_fft(ax, freq_spectrum, fft1d, plot_direction='vertical', yticks=None, ylim=None):
+def plot_fft(ax, freq_spectrum, fft_freq, fft1d, plot_direction='vertical', yticks=None, ylim=None):
 
     if plot_direction == 'vertical':
 
         #fft with scales (periods/dimension) in log scale
-        scales = 1./freq_spectrum
+        scales = 1./fft_freq
         scales_log = np.log2(scales)
         ax.scatter([np.mean(fft1d)-0.5] * len(freq_spectrum), np.log2(1/freq_spectrum))
         ax.plot(fft1d/np.mean(fft1d), scales_log,
@@ -89,7 +89,7 @@ def plot_fft(ax, freq_spectrum, fft1d, plot_direction='vertical', yticks=None, y
 
         #fft with frequencies
         ax2 = ax.twinx()
-        ax2.plot(fft1d/np.mean(fft1d), freq_spectrum, 'g--')
+        ax2.plot(fft1d/np.mean(fft1d), fft_freq, 'g--')
         #ax2.set_yscale('linear')
         ax2.set_ylabel('Frequency', color='g')
 
@@ -121,7 +121,7 @@ def plot_comparison_methods(wav1, wav2, sig, rec_signal_1, rec_signal_2):
     fig2, ax = plt.subplots(4, 1)
     # plotting the amplitude
     ax[0].set_xlim(20, len(wav1)-20)
-    ymax = max(wav1[0][20:-20]) + 0.3*max(wav2[0][20:-20])
+    ymax = max(wav1[20:-20]) + 0.3*max(wav2[20:-20])
     #ax[0].set_ylim( -ymax, ymax   )
     ax[0].set_title("real wavelets")
     ax[0].plot(wav1.real)
@@ -162,21 +162,21 @@ def plot_scalogram_fft_signal_together(time, signal, freq, wavelets, unit, wavel
     plot_signal_plus_average(top_ax, time, signal, unit)
 
     #plot scalogram
-    yticks, ylim, im = plot_wavelet_scalogram(
-        time, freq, wavelets, unit, waveletname, bottom_left_ax)
+    yticks, ylim, im = plot_wavelet_scalogram( bottom_left_ax,
+        time, freq, wavelets, unit, waveletname)
     #position colorbar
     cbar_ax = fig.add_axes([0.9, 0.85, 0.01, 0.1])
     fig.colorbar(im, cax=cbar_ax, orientation="vertical")
 
     #plot fft
-    plot_fft(bottom_right_ax, plot_direction='vertical',
-             yticks=yticks, ylim=ylim)
+    freq_fft1d, fft1d = wc.FFT(time, signal)
+    plot_fft(bottom_right_ax, freq, freq_fft1d, fft1d, plot_direction='vertical', yticks=yticks, ylim=ylim)
     bottom_right_ax.set_ylabel('Period [' + unit + ']',  fontsize=14)
     plt.tight_layout()
 
 
-def plot_wavelet_scalogram(time, freq, wavelets, unit, waveletname='cmor', ax=plt.subplots(figsize=(15, 10))):
-
+def plot_wavelet_scalogram(ax, time, freq, wavelets, unit, waveletname='cmor'):
+    
     #prepare data
     power = (abs(wavelets)) ** 2
     period = 1.0 / (freq)  # 1/freq
@@ -206,13 +206,21 @@ def plot_wavelet_scalogram(time, freq, wavelets, unit, waveletname='cmor', ax=pl
     return yticks, ylim, im
 
 
-fig, ax = plt.subplots(1)
-ax.plot(freq_spectrum)
-ax.plot(np.arange(0, len(periods_niko))*len(freq_spectrum) /
-        len(periods_niko), 1/periods_niko[::-1])
+def plot_frequencies_used(freq_spectrum, periods):
 
+    fig, ax = plt.subplots(1)
+    ax.plot(freq_spectrum)
+    ax.plot(np.arange(0, len(periods))*len(freq_spectrum) /
+            len(periods), 1/periods[::-1])
 
-'''plot signals and wavelets'''
+def plot_all():
+    plt.show()
+
+def provide_axis():
+    fig, ax = plt.subplots(figsize=(15, 10))
+    return ax
+
+'''plot signals and wavelets
 plot_signal_phase_fft(t, sig, freq_spectrum, frequencies, fft1d)
 plot_scalogram_fft_signal_together(
     t, sig,  1/periods_niko, waves_niko, unit, waveletname=kernel_niko)
@@ -232,3 +240,4 @@ plot_scalogram_fft_signal_together(t, sig, 1/periods_niko, waves_niko, unit, wav
 #plot_waves_amplitude_phase_WL('niko wavelet', sig, rec_signal_niko, waves_niko, freq_bands_niko)
 #plot_comparison_methods()
 plt.show()
+'''
