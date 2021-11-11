@@ -1,3 +1,5 @@
+#using Pkg; Pkg.activate("./")
+#Pkg.instantiate()
 include("../src/read_bin.jl")
 include("../src/basicent.jl")
 using Plots
@@ -5,10 +7,11 @@ using Suppressor
 using DrWatson
 using DataFrames
 using NPZ
+using ConfParser
 
 
-
-
+#Pkg.add("DelayEmbeddings")
+using DelayEmbeddings
 
 
 function changevector!(A, τ, I)
@@ -51,7 +54,9 @@ function load_npy_data(nameX, nameY)
 
     dataX = npzread(nameX)
     dataY = npzread(nameY)
-
+    println()
+    println(dataX[1])
+    println(typeof(dataX))
     return dataX, dataY
 
 end
@@ -59,22 +64,7 @@ end
 
 
 
-input_file = ARGS[1]
-output_file = ARGS[2]
 
-data_frame = readtable(input_file, separator = ',')
-writetable(output_file, data_frame)
-
-function extract_instructions(input_file)
-
-    open(input_file, "r") do in_file
-        # Use a for loop to process the rows in the input file one-by-one
-        for line in eachline(in_file)
-
-        end
-    end
-    
-end
 
 function inizilaize_one_embeding()
     "
@@ -83,7 +73,7 @@ function inizilaize_one_embeding()
 
     Bin = 150
     kind_of_ergodicity = Entropies.RectangularBinning(Bin)
-    root2 = "../data/exp_pro/correlations_TE"
+    root = "../data/exp_pro/correlations_TE"
     lag = 25
     #τ_delays = (0,  -10, -5, 0, lag)
     τ_delays = (0,  0, lag)
@@ -108,29 +98,86 @@ function inizilaize_one_embeding()
     name = savename(prefix, dim , suffix)
 end
 
-function inizilaize_embedings()
-    #root2 = "/Users/andreu/Desktop/Dropbox/transfer_inormation_prague/code/correlations_TE"
-    root2 = "../data/exp_pro/correlations_TE"
+function inizilaize_embedings(name_conf_file)
 
-    Bin = 150
-    kind_of_ergodicity = Entropies.RectangularBinning(Bin)
-    
-    maxτ = 50
-    jumpτ = 5
-    aux = LinRange(jumpτ, maxτ, 10)
+    ep = load_embedings_params(name_conf_file)
+
+    kind_of_ergodicity = Entropies.RectangularBinning(ep.Bin)
+    estimator = VisitationFrequency(kind_of_ergodicity)
+
+    aux = LinRange(ep.jumpτ, ep.maxτ, 10)
     τ_range = round.(Int64, aux)
-    τ_delays = (0, 0,  maxτ ) #RIGhT ORDER FOR THE 3 dimensional embbeding case
-    #emb_dim = (2, 1, 1)
-    emb_dim = (1, 2, 2)
+    τ_delays = (0, 0,  ep.maxτ ) #RIGhT ORDER FOR THE 3 dimensional embbeding case
+    
 
-    aux = '_'
+    auxs = '_'
     for (i, e) in enumerate(τ_delays)
-        aux = string(τ_delays[length(τ_delays)-i+1], aux, emb_dim[i])
+        aux = string(τ_delays[length(τ_delays)-i+1], auxs, ep.emb_dim[i])
     end
-    name = "couplings_meanTE_Knn$RecBin-$aux.txt"
-    name_file = "$root2/$name"
+    
+    aux_name_tag = ep.name_tag
+    aux_bin_str = ep.Bin
+    aux_root = ep.root
+    name = "$aux_name_tag$aux_bin_str-$aux.txt"
+    name_file = "$aux_root/$name"
+    
+    println()
+    println(name)
+    println()
     #joint= DelayEmbeddings.genembed(Dataset(x, y),  τ_delays, emb_dim )
     #joint= DelayEmbeddings.genembed(Dataset(x, y),  (0,0,50, 5, 10), (1,2,2,2,2) )
+    return estimator, τ_range, τ_delays, name_file, ep.emb_dim
+end
+
+
+function load_embedings_params(name_conf_file)
+    "
+    load the parameters to define the embeding characteristics
+    "
+
+    conf = ConfParse(name_conf_file)
+    parse_conf!(conf)
+
+    # get and store config parameter
+    #root = "/Users/andreu/Desktop/Dropbox/transfer_inormation_prague/code/correlations_TE"
+    #root = "../data/exp_pro/correlations_TE"
+    #maxτ = 50
+    #jumpτ = 5
+    #emb_dim = (2, 1, 1)
+    #emb_dim = (1, 2, 2)
+    #name_tag = "couplings_meanTE_Knn"
+
+    root = retrieve(conf, "names", "root_folder")
+    name_tag = retrieve(conf, "names", "name_tag")
+
+    Bin  = parse(Int64,retrieve(conf, "emb_par", "bins")) 
+    maxτ = parse(Int64,retrieve(conf, "emb_par", "max_tau"))
+    jumpτ = parse(Int64,retrieve(conf, "emb_par", "jump_tau"))
+    emb_dim_str = retrieve(conf, "emb_par", "embeding_dimension")
+
+    emb_dim = []#(for e in collect(emb_dim_str) end)
+    for e in collect(emb_dim_str)
+        push!(emb_dim, parse(Int64,e))
+    end
+
+    emb_par = embedings_params(root, name_tag, Bin, maxτ, jumpτ, emb_dim)
+    return emb_par
+
+end
+
+
+struct embedings_params
+    "
+    define the parameters to define the embeding characteristics
+    "
+
+    root :: String
+    name_tag :: String
+    Bin :: Int64
+    maxτ :: Int64
+    jumpτ :: Int64
+    emb_dim :: Vector
+ 
 end
 
 function compute_one_TE(name_file, test_couplings, couplings, estimator, τ_delays, emb_dim)
@@ -161,25 +208,32 @@ function compute_one_TE(name_file, test_couplings, couplings, estimator, τ_dela
 
 end 
 
+function read_rossler()
+    n_points = 131072
+    couplings = LinRange(0, 0.25, 99)
+    #root = "../data/exp_raw/binfiles/Rossler_bin_"
+    #root = "/Users/andreu/Desktop/Dropbox/transfer_inormation_prague/code/binfiles/Rossler_bin_"
+    root = "../../../TE_EG_project/package_CMI_prague/data/exp_raw/binfiles/Rossler_bin_"
+    test_couplings = read_bin_couplings(root, n_points, couplings);
+    return test_couplings
+end
 
-function TE_means( output_name, τ_delays, emb_dim, kind_of_ergodicity)
+
+function TE_means(dataX, dataY,  output_name, τ_range, τ_delays, emb_dim, estimator)
 
     "
     compute many TE and measure a mean
     "
 
-    open("$root2/$output_name", "w") do f
+    open(output_name, "w") do f
         @suppress_err begin
-            for i in 1:size(test_couplings, 3)-1
+            for i in 1:size(dataX)-1
                 mean_TE = 0
-                aux = test_couplings[:,:,i]
-                dataX = aux[:,1]
-                dataY = aux[:,2]
                 for t in τ_range
                     print(t)
                     ts =  changevector!(τ_delays, t, 2)
                     joint = DelayEmbeddings.genembed(Dataset(dataX, dataY),  ts, emb_dim )
-                    e = tranfserentropy(joint, VisitationFrequency(kind_of_ergodicity))
+                    e = tranfserentropy(joint, estimator)
                     #e = tranfserentropy(joint, VisitationFrequency(b); embdim = 5, α =1.0, base =2)
                     #e = tranfserentropy(joint, KozachenkoLeonenko(1,8),  2)
                     mean_TE += e/length(τ_range)  
@@ -192,4 +246,20 @@ function TE_means( output_name, τ_delays, emb_dim, kind_of_ergodicity)
     end
 
 end
+
+
+input_file = ARGS[1]
+nameX  = ARGS[2]
+nameY = ARGS[3]
+println(input_file)
+println(nameY)
+println(nameX)
+estimator, τ_range, τ_delays, name_output_file, emb_dim = inizilaize_embedings(input_file)
+#ENSO_manuel_wavelet_vecors_pywt_gaussian_amp.npy
+#aux = nameX[:end-7]
+#tail = "_pha.npy"
+dataX, dataY = load_npy_data(nameX, nameY)
+TE_means(dataX[1], dataY[1],  name_output_file, τ_range, τ_delays, emb_dim, estimator)
+#output_file = ARGS[2]
+
 
