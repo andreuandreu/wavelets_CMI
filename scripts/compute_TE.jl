@@ -2,7 +2,6 @@
 #Pkg.instantiate()
 include("../src/read_bin.jl")
 include("../src/basicent.jl")
-using Plots
 using Suppressor
 using DrWatson
 using DataFrames
@@ -11,7 +10,7 @@ using ConfParser
 
 
 #Pkg.add("DelayEmbeddings")
-using DelayEmbeddings
+
 
 
 function changevector!(A, τ, I)
@@ -35,9 +34,9 @@ end
 
 
 
-function load_data(root)
+function load_rossler_data(root)
     "
-    load data
+    load rossler data
     "
 
     n_points = 131072
@@ -50,19 +49,22 @@ function load_data(root)
 end
 
 
-function load_npy_data(nameX, nameY)
+function load_npy_data(nameX, nameY, nameChar)
 
     dataX = npzread(nameX)
     dataY = npzread(nameY)
+    
+    dataChar  = LinRange(0.001, 1, size(dataX,1))
     println()
-    println(dataX[1])
-    println(typeof(dataX))
-    return dataX, dataY
+    println(dataX[:,1])
+    println(typeof(dataX[:,1]))
+    println(size(dataX))
+    println(size(dataChar,1))
+    println(dataChar)
+    println()
+    return dataX, dataY, dataChar
 
 end
-
-
-
 
 
 
@@ -120,10 +122,7 @@ function inizilaize_embedings(name_conf_file)
     aux_root = ep.root
     name = "$aux_name_tag$aux_bin_str-$aux.txt"
     name_file = "$aux_root/$name"
-    
-    println()
-    println(name)
-    println()
+
     #joint= DelayEmbeddings.genembed(Dataset(x, y),  τ_delays, emb_dim )
     #joint= DelayEmbeddings.genembed(Dataset(x, y),  (0,0,50, 5, 10), (1,2,2,2,2) )
     return estimator, τ_range, τ_delays, name_file, ep.emb_dim
@@ -180,7 +179,7 @@ struct embedings_params
  
 end
 
-function compute_one_TE(name_file, test_couplings, couplings, estimator, τ_delays, emb_dim)
+function compute_one_TE(dataX, dataY, dataChar, name_file, estimator, τ_delays, emb_dim)
     "
     compute one TE
     "
@@ -188,17 +187,13 @@ function compute_one_TE(name_file, test_couplings, couplings, estimator, τ_dela
     
     @suppress_err begin
     open("$name_file", "w") do file
-        for i in 1:size(test_couplings, 3)-1
+        for i in 1:size(dataChar, 1)-1
+            println("doing something? ", i)
             if i%10 == 3
-                aux = test_couplings[:,:,i]
-                dataX = aux[:,1]
-                dataY = aux[:,2]
-                joint = DelayEmbeddings.genembed(Dataset(dataX, dataY),  τ_delays, emb_dim )
-
+                joint = DelayEmbeddings.genembed(Dataset(dataX[i,:], dataY[i,:]),  τ_delays, emb_dim )
                 entropy = tranfserentropy( joint, estimator)
-
-                println(i, ' ', couplings[i], ' ', entropy)
-                aux2 = couplings[i]
+                println(i, ' ', dataChar[i], ' ', entropy)
+                aux2 = dataChar[i]
                 TE[i] = entropy
                 write(file, "$aux2 $entropy\n")
             end
@@ -219,27 +214,28 @@ function read_rossler()
 end
 
 
-function TE_means(dataX, dataY,  output_name, τ_range, τ_delays, emb_dim, estimator)
+function TE_means(dataX, dataY, dataChar, output_name, τ_range, τ_delays, emb_dim, estimator)
 
     "
     compute many TE and measure a mean
     "
 
-    open(output_name, "w") do f
+    open(output_name, "w") do file
         @suppress_err begin
-            for i in 1:size(dataX)-1
+            for i in 1:size(dataChar, 1)-1
+                println("doing something? ", i)
                 mean_TE = 0
                 for t in τ_range
                     print(t)
                     ts =  changevector!(τ_delays, t, 2)
-                    joint = DelayEmbeddings.genembed(Dataset(dataX, dataY),  ts, emb_dim )
-                    e = tranfserentropy(joint, estimator)
-                    #e = tranfserentropy(joint, VisitationFrequency(b); embdim = 5, α =1.0, base =2)
-                    #e = tranfserentropy(joint, KozachenkoLeonenko(1,8),  2)
-                    mean_TE += e/length(τ_range)  
+                    joint = DelayEmbeddings.genembed(Dataset(dataX[i, :], dataY[i, :]),  ts, emb_dim )
+                    entropy = tranfserentropy(joint, estimator)
+                    #entropy = tranfserentropy(joint, VisitationFrequency(b); embdim = 5, α =1.0, base =2)
+                    #entropy = tranfserentropy(joint, KozachenkoLeonenko(1,8),  2)
+                    mean_TE += entropy/length(τ_range)  
                 end
-                aux2 = couplings[i]
-                println(couplings[i], ' ', mean_TE)
+                aux2 = dataChar[i]
+                println("now doing", dataChar[i], ' ', mean_TE)
                 write(file, "$aux2 $mean_TE\n")
             end
         end
@@ -248,18 +244,24 @@ function TE_means(dataX, dataY,  output_name, τ_range, τ_delays, emb_dim, esti
 end
 
 
+
 input_file = ARGS[1]
 nameX  = ARGS[2]
-nameY = ARGS[3]
+
+nameY = nameX[1:end-7]*"pha.npy"
+nameChar = nameX[1:end-7]*"fre.npy"
+
 println(input_file)
 println(nameY)
 println(nameX)
+println()
+
 estimator, τ_range, τ_delays, name_output_file, emb_dim = inizilaize_embedings(input_file)
 #ENSO_manuel_wavelet_vecors_pywt_gaussian_amp.npy
 #aux = nameX[:end-7]
 #tail = "_pha.npy"
-dataX, dataY = load_npy_data(nameX, nameY)
-TE_means(dataX[1], dataY[1],  name_output_file, τ_range, τ_delays, emb_dim, estimator)
+dataX, dataY, dataChar = load_npy_data(nameX, nameY, nameChar)
+TE_means(dataX, dataY, dataChar,  name_output_file, τ_range, τ_delays, emb_dim, estimator)
 #output_file = ARGS[2]
 
 
