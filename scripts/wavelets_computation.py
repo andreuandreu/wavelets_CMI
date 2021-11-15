@@ -127,10 +127,10 @@ def read_wavelets(name_base):
 
     amplitude = np.load(name_base+'_amp.npy', fix_imports=False)
     phase = np.load(name_base+'_pha.npy', fix_imports=False)
+    scales = np.load(name_base+'_ska.npy', fix_imports=False)
+    return amplitude, phase, scales
 
-    return amplitude, phase
-
-def write_amplitude_phase_wav(waves, name_file):
+def write_amplitude_phase_scale_wav(waves, scales, name_file):
     
     amp = []
     phase = []
@@ -140,8 +140,10 @@ def write_amplitude_phase_wav(waves, name_file):
 
     np.save(name_file+'_amp.npy', amp, allow_pickle=True, fix_imports=True)
     np.save(name_file+'_pha.npy', phase, allow_pickle=True, fix_imports=True)
+    np.save(name_file+'_ska.npy', scales, allow_pickle=True, fix_imports=True)
     print(' \n saving amplitude ', name_file+'_amp.npy')
-    print(' saving phase in ', name_file+'_pha.npy\n')
+    print(' saving phase in ', name_file+'_pha.npy')
+    print(' saving phase in ', name_file+'_ska.npy\n')
     return amp, phase
 
 def wav_reconstructed_signal(sig, waves, no_amp = True, individual_amp = False, global_amp = False ):

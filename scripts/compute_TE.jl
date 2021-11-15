@@ -53,8 +53,8 @@ function load_npy_data(nameX, nameY, nameChar)
 
     dataX = npzread(nameX)
     dataY = npzread(nameY)
-    
-    dataChar  = LinRange(0.001, 1, size(dataX,1))
+    dataChar = npzread(nameChar)
+    #dataChar  = LinRange(0.001, 1, size(dataX,1))
     println()
     println(dataX[:,1])
     println(typeof(dataX[:,1]))
@@ -240,6 +240,7 @@ function TE_means(dataX, dataY, dataChar, output_name, τ_range, τ_delays, emb_
             end
         end
     end
+    println("entropies have been stored in here ", output_name)
 
 end
 
@@ -249,7 +250,7 @@ input_file = ARGS[1]
 nameX  = ARGS[2]
 
 nameY = nameX[1:end-7]*"pha.npy"
-nameChar = nameX[1:end-7]*"fre.npy"
+nameChar = nameX[1:end-7]*"ska.npy"
 
 println(input_file)
 println(nameY)

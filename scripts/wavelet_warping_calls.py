@@ -6,7 +6,9 @@ import wavelets_ploting as wp
 
 '''
 code that warps the functions necessary tu do a preliminary analysis of a guiven signal in 
-wavelets, save them in .npy files and plot them
+wavelets, save them in .npy files and plot them.
+
+
 
 - 1st provide a univaluated signal, chose one function from the provide_signals script
     1 chose a tag in the dictionary name_source
@@ -34,6 +36,11 @@ wavelets, save them in .npy files and plot them
     2. make sure that the name corresponds to the dataset and analysis that you are about to use!!!
 
 - 6th plot or compare the wavelets
+
+
+IMPORTANT the most significant things in this script are 
+    1 select the 'frequencies'
+    2 make sure the 'units' and signal are 
 '''
 
 
@@ -62,8 +69,8 @@ name_source = {
 
 
 '''call for the time and signal'''
-sig_tag = 'rain_india_manuel'
-#sig_tag = 'ENSO_manuel'
+#sig_tag = 'rain_india_manuel'
+sig_tag = 'ENSO_manuel'
 t, sig = ps.read_ENSO_rain_manuel_files(name_source[sig_tag])
 #t, sig = ps.online_ENSO_34()
 if sig_tag == 'ENSO_manuel':
@@ -109,7 +116,7 @@ if wav_method == 'niko':
 '''satore/read the amplitude and phase of the waveleets in/from numpy files'''
 name_files = data + sig_tag + '_' + unit + '_' + wav_method + '_' + kernel_pywl
 #wc.write_amplitude_phase_wav(waves_pywt, name_files_pywt)
-wc.write_amplitude_phase_wav(waves, name_files)
+wc.write_amplitude_phase_scale_wav(waves, 1.0 / frequencies, name_files)
 #amplitude, phase = wc.read_wavelets(name_files_pywt)
 
 '''reconstruct the signal form the wavelets'''
