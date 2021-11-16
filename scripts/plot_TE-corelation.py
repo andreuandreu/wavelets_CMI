@@ -22,9 +22,11 @@ def read_data(name):
     usecols = [0,1]
     print (name)
     #name = './correlations_TE/couplings_TE_VFb10-base2_1-5-10_122.txt'
-    x, y= np.loadtxt(name,  comments='#', usecols = usecols, unpack = True )##, 
-
-    return x, y
+    #x, y = np.loadtxt(name,  comments='#', delimiter=' ',
+    #                  usecols=usecols, unpack=True)  # ,
+    scales, TE = np.genfromtxt(name, delimiter=' ',
+                               dtype="f8,f8", unpack=True, usecols=[0, 1])
+    return scales, TE
 
 
 def read_texts(fname ):
