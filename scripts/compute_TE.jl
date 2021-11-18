@@ -105,8 +105,14 @@ function inizilaize_embedings(name_conf_file)
     ep = load_embedings_params(name_conf_file)
 
     kind_of_ergodicity = Entropies.RectangularBinning(ep.Bin)
-    estimator = VisitationFrequency(kind_of_ergodicity)
-
+    
+    if ep.prob_est == "knn"
+        estimator = KozachenkoLeonenko(kind_of_ergodicity)
+    if ep.prob_est == "VisFreq"
+        estimator = VisitationFrequency(kind_of_ergodicity)
+    if ep.prob_est == "Kraskov"
+        estimator = Kraskov(k = kind_of_ergodicity)
+    
     aux = LinRange(ep.jumpτ, ep.maxτ, 10)
     τ_range = round.(Int64, aux)
     τ_delays = (0, 0,  ep.maxτ ) #RIGhT ORDER FOR THE 3 dimensional embbeding case
@@ -154,12 +160,15 @@ function load_embedings_params(name_conf_file)
     jumpτ = parse(Int64,retrieve(conf, "emb_par", "jump_tau"))
     emb_dim_str = retrieve(conf, "emb_par", "embeding_dimension")
 
+    prob_est = retrieve(conf, "prob_est", "prob_kind")
+    
+
     emb_dim = []#(for e in collect(emb_dim_str) end)
     for e in collect(emb_dim_str)
         push!(emb_dim, parse(Int64,e))
     end
 
-    emb_par = embedings_params(root, name_tag, Bin, maxτ, jumpτ, emb_dim)
+    emb_par = embedings_params(root, name_tag, Bin, maxτ, jumpτ, emb_dim, prob_est)
     return emb_par
 
 end
@@ -176,6 +185,7 @@ struct embedings_params
     maxτ :: Int64
     jumpτ :: Int64
     emb_dim :: Vector
+    prob_est :: String
  
 end
 
