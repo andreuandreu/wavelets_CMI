@@ -96,7 +96,7 @@ def plot_comoludogram(scales, phase_TE, phase_amp_TE):
     for ax, cont, tit, lab in zip(axs, toplot, tits, labs):
         ax = plt.subplot(ax)
         cs = ax.contourf(xaxe, yaxe, cont, levels=np.arange(
-            0.95, 1, 0.00125), cmap=plt.cm.get_cmap("jet"), extend='max')
+            0.99, 1, 0.00125), cmap=plt.cm.get_cmap("jet"), extend='max')
         # cs = ax.contourf(x, y, cont, levels = np.arange(4, 20, 0.125), cmap = plt.cm.get_cmap("jet"), extend = 'max')
         ax.tick_params(axis='both', which='major', labelsize=20)
         ax.set_title(tit, size=30)
