@@ -114,7 +114,7 @@ def plot_comoludogram(scales, phase_TE, phase_amp_TE):
             # plt.colorbar(cs)
             ax.grid()
             ax.set_ylabel("PERIOD %s [years]" % lab, size=23)
-    plt.savefig('plots/nino34-CESMhigh.eps', bbox_inches="tight")
+    #plt.savefig('plots/nino34-CESMhigh.eps', bbox_inches="tight")
 
     
 
