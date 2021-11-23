@@ -48,7 +48,18 @@ IMPORTANT the most significant things in this script are
 '''folder for data output'''
 data = './data/output/'  # '../data/' in case you are in the scripts folder
 
-'''compute signal
+
+
+gauss = False
+noise = False
+name_source = {
+    'rain_india_manuel': './data/imput/s_allindiarain18712016.csv',
+    'ENSO_manuel': './data/imput/s_nino3418702020.csv',
+    'ENSO_online': 'http://paos.colorado.edu/research/wavelets/wave_idl/sst_nino3.dat',
+    'synthetic': 'sin_gauss_' + str(gauss)[0] + 'noise_' + str(noise)[0]
+}
+
+'''compute signal'''
 seed_freq = [1/20., 1/100, 1/6]  # freq, they shall be below one
 amplitudes = [0.5, 1, 2]
 #sampling_dt = 1
@@ -56,30 +67,23 @@ t = np.arange(600)
 
 t, sig = ps.create_signal(seed_freq, amplitudes, t, gauss=gauss, noise=noise)
 sig_tag = 'synthetic'
-'''
-gauss = True
-noise = True
-name_source = {
-    'rain_india_manuel': './data/imput/s_allindiarain18712016.csv',
-    'ENSO_manuel': './data/imput/s_nino3418702020.csv',
-    'ENSO_online': 'http://paos.colorado.edu/research/wavelets/wave_idl/sst_nino3.dat',
-    'synthetic': 'gauss_' + str(gauss)[0] + 'noise_' + str(noise)[0]
-}
-
 
 
 '''call for the time and signal'''
 #sig_tag = 'rain_india_manuel'
-sig_tag = 'ENSO_manuel'
-t, sig = ps.read_ENSO_rain_manuel_files(name_source[sig_tag])
+#sig_tag = 'ENSO_manuel'
+#sig_tag = 'sin_signal'
+#t, sig = ps.read_ENSO_rain_manuel_files(name_source[sig_tag])
 #t, sig = ps.online_ENSO_34()
 if sig_tag == 'ENSO_manuel':
     sig = sig*20
 #t, sig = ps.get_ave_values(t, ig, 3)
 
 
+
 '''characteristics of the signal and the processing'''
-unit = 'month'
+#unit = 'month'
+unit = 'Hz'
 
 '''correct the signal time in spacific cases, depending on the units'''
 if unit == 'month' and 'manuel' in sig_tag:
@@ -118,6 +122,7 @@ name_files = data + sig_tag + '_' + unit + '_' + wav_method + '_' + kernel_pywl
 #wc.write_amplitude_phase_wav(waves_pywt, name_files_pywt)
 wc.write_amplitude_phase_scale_wav(waves, 1.0 / frequencies, name_files)
 #amplitude, phase = wc.read_wavelets(name_files_pywt)
+print("\n npy files stored in ", name_files, '\n')
 
 '''reconstruct the signal form the wavelets'''
 rec_signal_niko = wc.wav_reconstructed_signal(sig, waves, no_amp=False, individual_amp=True)
