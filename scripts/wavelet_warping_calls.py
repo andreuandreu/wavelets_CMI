@@ -2,7 +2,7 @@ import numpy as np
 import provide_signals as ps
 import wavelets_computation as wc
 import wavelets_ploting as wp
-
+import configparser
 
 '''
 code that warps the functions necessary tu do a preliminary analysis of a guiven signal in 
@@ -60,8 +60,8 @@ name_source = {
 }
 
 '''compute signal'''
-seed_freq = [1/20., 1/100, 1/6]  # freq, they shall be below one
-amplitudes = [0.5, 1, 2]
+seed_freq = [1/20., 1/100, 1/6, 1/3, 1/50, 1/200]  # freq, they shall be below one
+amplitudes = [0.5, 1, 2, 1, 1, 2]
 #sampling_dt = 1
 t = np.arange(600)
 
@@ -92,7 +92,10 @@ if unit == 'month' and 'manuel' in sig_tag:
 sampling_dt = t[1]-t[0]
 print('\n sampling period, last time and length of time', sampling_dt, t[-1], len(t), '\n')
 #frequencies = 1/np.array([0.083, 0.1,0.5,0.9,1,2,4,5,6,7,8, 16, 32,64, 126])#
-frequencies = 1/((np.arange(1, 256)*sampling_dt))  #
+if sig_tag == 'synthetic':
+    frequencies = np.array(seed_freq)
+else:
+    frequencies = 1/((np.arange(1, 256)*sampling_dt))  #
 
 '''automatic frequecy scaling done by measuring the modes of the fourier transform'''
 #par = wc.wavelets_scaling()
@@ -118,7 +121,7 @@ if wav_method == 'niko':
 
 
 '''satore/read the amplitude and phase of the waveleets in/from numpy files'''
-name_files = data + sig_tag + '_' + unit + '_' + wav_method + '_' + kernel_pywl
+name_files = data + sig_tag + '_' + 'Nska_'+str(len(frequencies))+ unit + '_' + wav_method + '_' + kernel_pywl
 #wc.write_amplitude_phase_wav(waves_pywt, name_files_pywt)
 wc.write_amplitude_phase_scale_wav(waves, 1.0 / frequencies, name_files)
 #amplitude, phase = wc.read_wavelets(name_files_pywt)

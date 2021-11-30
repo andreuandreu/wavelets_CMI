@@ -20,6 +20,8 @@ import fnmatch
 #obtained as x(t),x(t-5),x(t-10), where 5 and 10 are lags in number of samples
 #python plot_TE-corelation.py ./correlations_TE_files.txt ./correlations_TE_files2.txt
 
+#python ./scripts/plot_TE-corelation.py ./data/output/synthetic_Nska_6Hz_niko_cmor1.5-1.0_ska.npy Prob-est_VisFreq_b150 ./data/output/synthetic_Nska_6Hz_niko_cmor1.5-1.0_ska.npy
+
 def read_data(name):
     usecols = [0,1]
     print (name)
@@ -83,7 +85,7 @@ def plot_comoludogram(scales, phase_TE, phase_amp_TE):
     fig = plt.figure(figsize=(15, 7.5))
 
     xaxe, yaxe = np.meshgrid(scales, scales)
-
+    print(scales, xaxe)
     gs = gridspec.GridSpec(1, 2)
     gs.update(left=0.05, right=0.95, hspace=0.3,
                 top=0.95, bottom=0.05, wspace=0.15)
@@ -96,10 +98,13 @@ def plot_comoludogram(scales, phase_TE, phase_amp_TE):
     for ax, cont, tit, lab in zip(axs, toplot, tits, labs):
         ax = plt.subplot(ax)
         cs = ax.contourf(xaxe, yaxe, cont, levels=np.arange(
-            0.99, 1, 0.00125), cmap=plt.cm.get_cmap("jet"), extend='max')
+            0.0, 1, 0.00125), cmap=plt.cm.get_cmap("jet"), extend='max')
         # cs = ax.contourf(x, y, cont, levels = np.arange(4, 20, 0.125), cmap = plt.cm.get_cmap("jet"), extend = 'max')
         ax.tick_params(axis='both', which='major', labelsize=20)
         ax.set_title(tit, size=30)
+
+
+
 
         if 'ENSO' in folder or 'rain' in folder:
             ax.xaxis.set_major_locator(MultipleLocator(12))
@@ -127,6 +132,7 @@ def plot_comoludogram(scales, phase_TE, phase_amp_TE):
 folder = sys.argv[1]
 root_name = sys.argv[2]
 
+scales = np.arange(254)#np.load(sys.argv[3])
 TEs_matrix = load_TransferEntropies(folder, root_name)
 scales = np.arange(len(TEs_matrix))
 plot_comoludogram(scales, TEs_matrix, TEs_matrix)

@@ -3,11 +3,13 @@ from numpy.testing._private.utils import nulp_diff
 import pandas as pd
 import matplotlib.pyplot as plt
 import generate_colored_noises as gcn
+import surogates as srg
 import pandas as pd
 import numpy as np
 from numpy import random as rn
 from scipy import signal
 from scipy import io
+import random as rd
 import calendar
 from dateutil.parser import parse
     
@@ -268,11 +270,9 @@ def plot_delayed_undelayed():
     ax[3].plot(t_freq[s:e], phas_to_amp_sig[s:e], c = 'b')
     plt.tight_layout()
 
-def plot_victor_sig_file():
-    fig, ax = plt.subplots(1,1)
-    ax.plot(victor_sig['signal'][0][0:1111])
 
-victor_sig = io.loadmat('./data/exp_pro/matlab_victor_sin_data/signal_alpha2gamma.mat')
+
+#victor_sig = io.loadmat('./data/exp_pro/matlab_victor_sin_data/signal_alpha2gamma.mat')
 
 
 '''compute delay signal
@@ -285,3 +285,10 @@ plot_delayed_undelayed()
 plot_victor_sig_file()
 plt.show()
 '''
+
+
+def circular_surrogate(data):
+
+    shift = int(rd.random()*len(data))
+
+    return np.roll(data, shift)

@@ -227,7 +227,7 @@ function TE_means(dataX, dataY, output_name, τ_range, τ_delays, emb_dim, estim
 
     open(output_name, "w") do file
         @suppress_err begin
-            for i = 1:size(dataY, 1)-1
+            for i = 1:size(dataY, 1)
                 #println("doing something? ", i)
                 mean_TE = 0
                 for t in τ_range
@@ -256,8 +256,10 @@ function data_rows_TE(ep, base_name_output_file, τ_range, τ_delays, emb_dim, e
 
     if isdir(ep.root * ep.export_folder)
         println("BE AWARE folder already exixts!!! \n")
-    else mkdir(ep.root * ep.export_folder)
+    else
+        mkdir(ep.root * ep.export_folder)
     end
+
 
     for (i, char) in enumerate(dataChar)
         name_output_file = ep.root * ep.export_folder * base_name_output_file * "$(@sprintf("%.2f", char))" * ".txt"
