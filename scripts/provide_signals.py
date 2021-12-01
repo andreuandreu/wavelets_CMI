@@ -42,7 +42,15 @@ class signal_properties:
         self.noise_amp = noise_amp
         self.freq0 = freq0
         self.freq1 = freq1
-        
+
+def rossler_phase(name):
+
+    "./data/imput/rossler_phase_r12e27N03.dat"
+
+    sig = np.genfromtxt(name ,delimiter=',' ,
+           dtype="f8", usecols=[0])
+    t = np.arange(len(sig))
+    return t, sig
 
 def get_ave_values(xvalues, yvalues, n = 5):
     

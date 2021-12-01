@@ -54,6 +54,7 @@ gauss = False
 noise = False
 name_source = {
     'rain_india_manuel': './data/imput/s_allindiarain18712016.csv',
+    'rossler_phase': './data/imput/rossler_phase_r12e27N03.dat',
     'ENSO_manuel': './data/imput/s_nino3418702020.csv',
     'ENSO_online': 'http://paos.colorado.edu/research/wavelets/wave_idl/sst_nino3.dat',
     'synthetic': 'sin_gauss_' + str(gauss)[0] + 'noise_' + str(noise)[0]
@@ -66,8 +67,9 @@ amplitudes = [0.5, 1, 2, 1, 1, 2]
 t = np.arange(600)
 
 t, sig = ps.create_signal(seed_freq, amplitudes, t, gauss=gauss, noise=noise)
-sig_tag = 'synthetic'
-
+#sig_tag = 'synthetic'
+sig_tag = 'rossler_phase'
+t, sig = ps.rossler_phase(name_source['rossler_phase'])
 
 '''call for the time and signal'''
 #sig_tag = 'rain_india_manuel'
@@ -95,7 +97,7 @@ print('\n sampling period, last time and length of time', sampling_dt, t[-1], le
 if sig_tag == 'synthetic':
     frequencies = np.array(seed_freq)
 else:
-    frequencies = 1/((np.arange(1, 256)*sampling_dt))  #
+    frequencies = 1/((np.arange(1, 72)*sampling_dt))  #
 
 '''automatic frequecy scaling done by measuring the modes of the fourier transform'''
 #par = wc.wavelets_scaling()
