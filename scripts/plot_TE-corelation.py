@@ -20,8 +20,7 @@ import fnmatch
 #obtained as x(t),x(t-5),x(t-10), where 5 and 10 are lags in number of samples
 #python plot_TE-corelation.py ./correlations_TE_files.txt ./correlations_TE_files2.txt
 
-#python ./scripts/plot_TE-corelation.py ./data/output/synthetic_Nska_6Hz_niko_cmor1.5-1.0_ska.npy Prob-est_VisFreq_b150 ./data/output/synthetic_Nska_6Hz_niko_cmor1.5-1.0_ska.npy
-
+#python ./scripts/plot_TE-corelation.py ./data/output/correlations_TE/couplings_meanTE_Knn150-0_1.txt Prob-est_VisFreq_b150
 def read_data(name):
     usecols = [0,1]
     print (name)
@@ -69,7 +68,7 @@ def load_TransferEntropies(folder, root_name):
     name_files = fnmatch.filter(os.listdir(folder), root_name+'*')
     
 
-    size = len(name_files) -1
+    size = len(name_files) 
 
     TEs_matrix = np.empty( shape=(size, size))
     for i, n in enumerate(name_files[:-1]):

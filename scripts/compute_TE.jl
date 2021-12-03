@@ -11,7 +11,7 @@ using ConfParser
 
 #Pkg.add("DelayEmbeddings")
 
-#julia --project=. ./scripts/compute_TE.jl ./confs/config_embeding_char.ini ./data/output/ENSO_manuel_month_niko_cmor1.5-1.0_amp.npy
+#julia --project=. ./scripts/compute_TE.jl ./confs/config_embeding_char.ini
 
 function changevector!(A, τ, I)
     """this is a stupid function that given a vector A, copies it 
@@ -54,7 +54,7 @@ function load_npy_data(ep)
     datas = Array{AbstractArray}(undef, length(ep.sufixes), 1)
 
     for (i, s) in enumerate(ep.sufixes)
-        
+
         name = ep.data_folder * ep.data_name * s
         datas[i] = npzread(name)
 
@@ -214,7 +214,7 @@ function read_rossler()
     #root = "/Users/andreu/Desktop/Dropbox/transfer_inormation_prague/code/binfiles/Rossler_bin_"
     root = "../../../TE_EG_project/package_CMI_prague/data/exp_raw/binfiles/Rossler_bin_"
     test_couplings = read_bin_couplings(root, n_points, couplings)
-    
+
     return test_couplings
 end
 
@@ -243,9 +243,39 @@ function TE_means(dataX, dataY, output_name, τ_range, τ_delays, emb_dim, estim
             end
         end
     end
-    
+
 
 end
+
+
+function TE_each_delay(dataX, dataY, output_name, τ_range, τ_delays, emb_dim, estimator)
+
+    "
+    compute many TE for each tau delay
+    "
+
+    open(output_name, "w") do file
+        @suppress_err begin
+            for t in τ_range
+
+                ts = changevector!(τ_delays, t, 2)
+                joint = DelayEmbeddings.genembed(Dataset(dataX, dataY), ts, emb_dim)
+                entropy = tranfserentropy(joint, estimator)
+                #entropy = tranfserentropy(joint, VisitationFrequency(b); embdim = 5, α =1.0, base =2)
+                #entropy = tranfserentropy(joint, KozachenkoLeonenko(1,8),  2)
+                println("doing something? delay ", t, "  ", entropy)
+                write(file, "$entropy\n")
+            end
+            #println("now doing", dataChar[i], ' ', mean_TE)
+
+        end
+
+    end
+
+
+end
+
+
 
 function data_rows_TE(ep, base_name_output_file, τ_range, τ_delays, emb_dim, estimator)
 
@@ -278,7 +308,11 @@ name_conf_file = ARGS[1]
 ep = load_embedings_params(name_conf_file)
 estimator, τ_range, τ_delays, emb_dim, base_name_output_file = inizilaize_embedings(ep)
 
-data_rows_TE(ep, base_name_output_file, τ_range, τ_delays, emb_dim, estimator)
+#data_rows_TE(ep, base_name_output_file, τ_range, τ_delays, emb_dim, estimator)
+
+dataX, dataY, dataChar = load_npy_data(ep)
+output_name = name_output_file = ep.root * ep.export_folder * base_name_output_file * ".txt"#"./data/output/delay_rossler_phase.txt"
+TE_each_delay(dataX, dataY, output_name, τ_range, τ_delays, emb_dim, estimator)
 
 
 
