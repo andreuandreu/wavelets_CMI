@@ -1,5 +1,6 @@
-#using Pkg; Pkg.activate("./")
+#using Pkg#; Pkg.activate("./")
 #Pkg.instantiate()
+#Pkg.add("InformationMeasures")
 include("../src/read_bin.jl")
 include("../src/basicent.jl")
 using Suppressor
@@ -7,6 +8,7 @@ using DrWatson
 using DataFrames
 using NPZ
 using ConfParser
+using InformationMeasures
 
 
 #Pkg.add("DelayEmbeddings")
@@ -112,10 +114,14 @@ function inizilaize_embedings(ep)
         estimator = Kraskov(k = kind_of_ergodicity)
     end
 
-    aux = LinRange(ep.jumpτ, ep.maxτ, 10)
+    aux = LinRange(ep.jumpτ, ep.maxτ, Int(ep.maxτ / ep.jumpτ))
     τ_range = round.(Int64, aux)
-    τ_delays = (0, 0, ep.maxτ) #RIGhT ORDER FOR THE 3 dimensional embbeding case
-
+    if length(ep.emb_dim) == 3
+        τ_delays = (0, 0, ep.maxτ) #RIGhT ORDER FOR THE 3 dimensional embbeding case
+    end
+    if length(ep.emb_dim) == 5
+        τ_delays = (0, 0, 0, 0, ep.maxτ) #RIGhT ORDER FOR THE 5 dimensional embbeding case
+    end
 
     auxs = '_'
     for (i, e) in enumerate(τ_delays)
@@ -124,7 +130,8 @@ function inizilaize_embedings(ep)
 
     aux_name_tag = ep.name_tag
     aux_bin_str = ep.Bin
-    base_name_file = "$aux_name_tag$aux_bin_str-$aux"
+    base_name_file = ep.name_tag * "_bin-" * string(ep.Bin) * "_eDim-" * string(length(ep.emb_dim))
+    #base_name_file = "$aux_name_tag$aux_bin_str-$aux" * "_eDim-" * length(ep.emb_dim)
 
     #joint= DelayEmbeddings.genembed(Dataset(x, y),  τ_delays, emb_dim )
     #joint= DelayEmbeddings.genembed(Dataset(x, y),  (0,0,50, 5, 10), (1,2,2,2,2) )
@@ -219,6 +226,18 @@ function read_rossler()
 end
 
 
+function write_entropies_tau(name, entropies)
+
+
+    open(name, "w") do file
+        for e in entropies
+
+            write(file, "$e\n")
+        end
+    end
+
+end
+
 function TE_means(dataX, dataY, output_name, τ_range, τ_delays, emb_dim, estimator)
 
     "
@@ -230,14 +249,19 @@ function TE_means(dataX, dataY, output_name, τ_range, τ_delays, emb_dim, estim
             for i = 1:size(dataY, 1)
                 #println("doing something? ", i)
                 mean_TE = 0
+                entropies = zeros(0)
+
                 for t in τ_range
                     ts = changevector!(τ_delays, t, 2)
                     joint = DelayEmbeddings.genembed(Dataset(dataX, dataY[i, :]), ts, emb_dim)
                     entropy = tranfserentropy(joint, estimator)
+                    append!(entropies, entropy)
                     #entropy = tranfserentropy(joint, VisitationFrequency(b); embdim = 5, α =1.0, base =2)
                     #entropy = tranfserentropy(joint, KozachenkoLeonenko(1,8),  2)
                     mean_TE += entropy / length(τ_range)
                 end
+                file_name = output_name[1:end-4] * "_Yset-" * string(i) * ".txt"
+                write_entropies_tau(file_name, entropies)
                 #println("now doing", dataChar[i], ' ', mean_TE)
                 write(file, "$mean_TE\n")
             end
@@ -253,8 +277,8 @@ function TE_each_delay(dataX, dataY, output_name, τ_range, τ_delays, emb_dim, 
     "
     compute many TE for each tau delay
     "
-
-    open(output_name, "w") do file
+    file_name = output_name[1:end-4] * "_each-tau" * ".txt"
+    open(file_name, "w") do file
         @suppress_err begin
             for t in τ_range
 
@@ -269,6 +293,28 @@ function TE_each_delay(dataX, dataY, output_name, τ_range, τ_delays, emb_dim, 
             #println("now doing", dataChar[i], ' ', mean_TE)
 
         end
+
+    end
+
+
+end
+
+
+
+function MI_each_delay(dataX, dataY, output_name, τ_range)
+
+    "
+    compute many MI for each tau delay
+    "
+    file_name = output_name[1:end-4] * "_MI_each-tau" * ".txt"
+    open(file_name, "w") do file
+        for t in τ_range
+            mi_12 = get_mutual_information(dataX[1:end-t], dataY[t:end])
+            println("doing something? delay ", t, "  ", mi_12)
+            write(file, "$mi_12\n")
+        end
+        #println("now doing", dataChar[i], ' ', mean_TE)
+
 
     end
 
@@ -312,7 +358,10 @@ estimator, τ_range, τ_delays, emb_dim, base_name_output_file = inizilaize_embe
 
 dataX, dataY, dataChar = load_npy_data(ep)
 output_name = name_output_file = ep.root * ep.export_folder * base_name_output_file * ".txt"#"./data/output/delay_rossler_phase.txt"
-TE_each_delay(dataX, dataY, output_name, τ_range, τ_delays, emb_dim, estimator)
+
+
+#TE_each_delay(dataX[1, :], dataY[1, :], output_name, τ_range, τ_delays, emb_dim, estimator)
+MI_each_delay(dataX[1, :], dataY[1, :], output_name, τ_range)
 
 
 

@@ -3,7 +3,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import sys
 import numpy as np
-
 from scipy import signal
 
 
@@ -15,20 +14,25 @@ def read_TransferEntropy_julia(name):
 
     return scales, TE
 
-def plot_TE_rows(name, scales, TransferEntropy):
+def plot_TE_rows(name,  TransferEntropy):
 
     fig = plt.figure('name')
 
 
     ax = plt.subplot(1, 1, 1)
-    ax.plot(scales, TransferEntropy, label=name)
-    ax.set_xscale('log')
+    t = (TransferEntropy -np.mean(TransferEntropy) ) / np.std(TransferEntropy)
+    ax.plot(t, label=name)
+    #ax.set_xscale('log')
     ax.legend(frameon=False, fontsize = 10 , loc = 'lower left')
 
-name = sys.argv[1]
-scales, TransferEntropy = np.genfromtxt(name, delimiter=' ',
-                                        dtype="f8,f8", unpack=True, usecols=[0, 1])
+names = sys.argv[:]
 
+for n in names:
 
-plot_TE_rows(name[-15:-4], scales, TransferEntropy)
+    #scales, TransferEntropy = np.genfromtxt(n, delimiter=' ',
+    #                                    dtype="f8,f8", unpack=True, usecols=[0, 1])
+    TransferEntropy = np.genfromtxt(n, delimiter=' ',
+                                            dtype="f8", unpack=True, usecols=[0])
+
+    plot_TE_rows(n[-15:-4], TransferEntropy)
 plt.show()
