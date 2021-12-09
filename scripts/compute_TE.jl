@@ -277,6 +277,8 @@ function TE_each_delay(dataX, dataY, output_name, τ_range, τ_delays, emb_dim, 
     "
     compute many TE for each tau delay
     "
+    τ_delays = (0,0)
+    emb_dim = (1,2)
     file_name = output_name[1:end-4] * "_each-tau" * ".txt"
     open(file_name, "w") do file
         @suppress_err begin
@@ -310,6 +312,9 @@ function MI_each_delay(dataX, dataY, output_name, τ_range)
     open(file_name, "w") do file
         for t in τ_range
             mi_12 = get_mutual_information(dataX[1:end-t], dataY[t:end])
+            ts = changevector!(τ_delays, t, 2)
+            joint = DelayEmbeddings.genembed(Dataset(dataX, dataY), ts, emb_dim)
+        
             println("doing something? delay ", t, "  ", mi_12)
             write(file, "$mi_12\n")
         end

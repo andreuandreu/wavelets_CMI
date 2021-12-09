@@ -37,5 +37,13 @@ function tranfserentropy(joint, est; α =1.0, base =2)
 
 end
 
+function mutualInformation(joint, est; α = 1.0, base = 2)
 
+    H1 = Entropies.genentropy(joint[:, [1]], est)
+    H2 = Entropies.genentropy(joint[:, [2]], est)
+    H12 = Entropies.genentropy(joint, est)
+
+    return H1 + H2 - H12
+
+end
 
