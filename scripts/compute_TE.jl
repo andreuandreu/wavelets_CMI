@@ -303,20 +303,21 @@ end
 
 
 
-function MI_each_delay(dataX, dataY, output_name, τ_range)
+function MI_each_delay(dataX, dataY, output_name, τ_range, τ_delays)
 
     "
     compute many MI for each tau delay
     "
     file_name = output_name[1:end-4] * "_MI_each-tau" * ".txt"
+
     open(file_name, "w") do file
         for t in τ_range
             mi_12 = get_mutual_information(dataX[1:end-t], dataY[t:end])
             ts = changevector!(τ_delays, t, 2)
             joint = DelayEmbeddings.genembed(Dataset(dataX, dataY), ts, emb_dim)
-        
-            println("doing something? delay ", t, "  ", mi_12)
-            write(file, "$mi_12\n")
+            entropy = tranfserentropy(joint, estimator)
+            println("doing something? delay ", t, "  ", mi_12, "  ", entropy)
+            write(file, "$mi_12  $entropy\n")
         end
         #println("now doing", dataChar[i], ' ', mean_TE)
 
@@ -366,7 +367,7 @@ output_name = name_output_file = ep.root * ep.export_folder * base_name_output_f
 
 
 #TE_each_delay(dataX[1, :], dataY[1, :], output_name, τ_range, τ_delays, emb_dim, estimator)
-MI_each_delay(dataX[1, :], dataY[1, :], output_name, τ_range)
+MI_each_delay(dataX[1, :], dataY[1, :], output_name, τ_range, (0, 1))
 
 
 

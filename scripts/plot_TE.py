@@ -28,6 +28,7 @@ def plot_TE_rows(name,  TransferEntropy):
 names = sys.argv[:]
 
 for n in names:
+    print('aaaaaaa', n)
 
     #scales, TransferEntropy = np.genfromtxt(n, delimiter=' ',
     #                                    dtype="f8,f8", unpack=True, usecols=[0, 1])
@@ -36,14 +37,15 @@ for n in names:
 
     plot_TE_rows(n[-15:-4], TransferEntropy)
 
-name_dataX = './data/output/rossler_phase_Nska_71Hz_niko_cmor1.5-1.0_amp.npy'
+name_dataX = './data/output/rossler_phase_Nska_71Hz_niko_cmor1.5-1.0_pha.npy'
 name_dataY = './data/output/rossler_phase_Nska_71Hz_niko_cmor1.5-1.0_pha.npy'
 dataX = np.load(name_dataX )
 dataY = np.load(name_dataY)
 
+
 print('shape, size data', dataY.shape, dataX.size)
 print('shape, size data', dataX[0].shape, dataX[0].size)
-MI_entEst, MI_entEst_mnv, MI_score = mit.compure_MI_delays(dataX[0], dataY[0], 55)
+MI_entEst, MI_entEst_mnv, MI_score, MI_entEst_naive = mit.compure_MI_delays(dataX[0], dataY[0], 35)
 
                                     #    discrete_features=True) ) # mutual information of 0.69, expressed in nats
 
@@ -53,9 +55,12 @@ MI_entEst = (MI_entEst - np.mean(MI_entEst)) / \
     np.std(MI_entEst)
 MI_entEst_mnv = (MI_entEst_mnv - np.mean(MI_entEst_mnv)) / \
     np.std(MI_entEst_mnv)
-plt.plot(MI_entEst)
-plt.plot(MI_entEst_mnv)
-plt.plot(MI_score)
+MI_entEst_naive = (MI_entEst_naive - np.mean(MI_entEst_naive)) / \
+    np.std(MI_entEst_naive)
+
+plt.plot(MI_entEst, label = 'Krasov est k=16')
+#plt.plot(MI_entEst_mnv, label= 'multivariate Gaussian distribution')
+plt.plot(MI_entEst_naive, label='Kozachenko-Leonenko k=16')
 
 
 plt.show()
