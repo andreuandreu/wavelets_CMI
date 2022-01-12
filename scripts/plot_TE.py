@@ -28,7 +28,6 @@ def plot_TE_rows(name,  TransferEntropy):
 names = sys.argv[:]
 
 for n in names:
-    print('aaaaaaa', n)
 
     #scales, TransferEntropy = np.genfromtxt(n, delimiter=' ',
     #                                    dtype="f8,f8", unpack=True, usecols=[0, 1])
@@ -61,6 +60,5 @@ MI_entEst_naive = (MI_entEst_naive - np.mean(MI_entEst_naive)) / \
 plt.plot(MI_entEst, label = 'Krasov est k=16')
 #plt.plot(MI_entEst_mnv, label= 'multivariate Gaussian distribution')
 plt.plot(MI_entEst_naive, label='Kozachenko-Leonenko k=16')
-
 
 plt.show()
