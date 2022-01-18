@@ -3,7 +3,8 @@ import provide_signals as ps
 import wavelets_computation as wc
 import wavelets_ploting as wp
 import configparser
-
+import surogates as su
+import matplotlib.pyplot as plt
 '''
 code that warps the functions necessary tu do a preliminary analysis of a guiven signal in 
 wavelets, save them in .npy files and plot them.
@@ -67,8 +68,8 @@ amplitudes = [0.5, 1, 2, 1, 1, 2]
 t = np.arange(600)
 
 t, sig = ps.create_signal(seed_freq, amplitudes, t, gauss=gauss, noise=noise)
-#sig_tag = 'synthetic'
-sig_tag = 'rossler_phase'
+sig_tag = 'synthetic'
+#sig_tag = 'rossler_phase'
 t, sig = ps.rossler_phase(name_source['rossler_phase'])
 
 '''call for the time and signal'''
@@ -107,6 +108,9 @@ else:
 freq_spectrum, fft1d = wc.FFT(t, sig)#fft(sig)/len(t)
 nyquist = int(len(fft1d))
 
+'''call to create surrogates'''
+su.many_surrogates('surr_circular', sig_tag, sig,
+                   min_shift=30, n_surrogates=111)
 
 '''compute wavelet decomposition for 2 different methods'''
 kernel_pywl = 'cmor1.5-1.0'  # 'cmor'# #kind of wavelet kernel'gaussian'#
@@ -136,6 +140,8 @@ rec_signal_niko = wc.wav_reconstructed_signal(sig, waves, no_amp=False, individu
 wp.plot_signal_phase_fft(t, sig, unit, freq_spectrum, frequencies, fft1d)
 wp.plot_scalogram_fft_signal_together(
     t, sig,  1/periods,  waves, unit, waveletname=kernel_niko)
+
+
 #wp.plot_scalogram_fft_signal_together(
 #    t, sig, freq_bands_pywt, waves_pywt, unit, waveletname=kernel_pywl)
 #wp.plot_scalogram_fft_signal_together(
