@@ -51,42 +51,65 @@ data = './data/output/'  # '../data/' in case you are in the scripts folder
 
 
 
-gauss = False
-noise = False
 name_source = {
     'rain_india_manuel': './data/imput/s_allindiarain18712016.csv',
     'rossler_phase': './data/imput/rossler_phase_r12e27N03.dat',
     'ENSO_manuel': './data/imput/s_nino3418702020.csv',
     'ENSO_online': 'http://paos.colorado.edu/research/wavelets/wave_idl/sst_nino3.dat',
-    'synthetic': 'sin_gauss_' + str(gauss)[0] + 'noise_' + str(noise)[0]
+    'synthetic': 'sin_gauss_'
 }
 
-'''compute signal'''
-seed_freq = [1/20., 1/100, 1/6, 1/3, 1/50, 1/200]  # freq, they shall be below one
-amplitudes = [0.5, 1, 2, 1, 1, 2]
-#sampling_dt = 1
-t = np.arange(600)
 
-t, sig = ps.create_signal(seed_freq, amplitudes, t, gauss=gauss, noise=noise)
-sig_tag = 'synthetic'
+#
+
+
+'''tag for the time and signal'''
+#sig_tag = 'synthetic'
 #sig_tag = 'rossler_phase'
-t, sig = ps.rossler_phase(name_source['rossler_phase'])
-
-'''call for the time and signal'''
 #sig_tag = 'rain_india_manuel'
-#sig_tag = 'ENSO_manuel'
+sig_tag = 'ENSO_manuel'
 #sig_tag = 'sin_signal'
-#t, sig = ps.read_ENSO_rain_manuel_files(name_source[sig_tag])
-#t, sig = ps.online_ENSO_34()
+
+
+
+'''depending on the the tag, load a signal'''
+if sig_tag == 'rossler_phase':
+    t, sig = ps.rossler_phase(name_source[sig_tag])
+
+if sig_tag == 'ENSO_online':
+    t, sig = ps.online_ENSO_34()
+
 if sig_tag == 'ENSO_manuel':
+    t, sig = ps.read_ENSO_rain_manuel_files(name_source[sig_tag])
     sig = sig*20
-#t, sig = ps.get_ave_values(t, ig, 3)
+
+if sig_tag == 'rain_india_manuel':
+    t, sig = ps.read_ENSO_rain_manuel_files(name_source[sig_tag])
+
+if sig_tag == 'sinthetic':
+
+    '''compute signal'''
+    seed_freq = [1/20., 1/100, 1/6, 1/3, 1/50,
+                1/200]  # freq, they shall be below one
+    amplitudes = [0.5, 1, 2, 1, 1, 2]
+
+    gauss = False
+    noise = False
+
+    name_source[sig_tag] = name_source[sig_tag] + \
+        str(gauss)[0] + 'noise_' + str(noise)[0]
+
+    t, sig = ps.create_signal(seed_freq, amplitudes,
+                              t, gauss=gauss, noise=noise)
+    #sampling_dt = 1
+    t = np.arange(600)
+    t, sig = ps.get_ave_values(t, sig, 3)
 
 
 
 '''characteristics of the signal and the processing'''
-#unit = 'month'
-unit = 'Hz'
+unit = 'month'
+#unit = 'Hz'
 
 '''correct the signal time in spacific cases, depending on the units'''
 if unit == 'month' and 'manuel' in sig_tag:
@@ -108,9 +131,7 @@ else:
 freq_spectrum, fft1d = wc.FFT(t, sig)#fft(sig)/len(t)
 nyquist = int(len(fft1d))
 
-'''call to create surrogates'''
-su.many_surrogates('surr_circular', sig_tag, sig,
-                   min_shift=30, n_surrogates=111)
+
 
 '''compute wavelet decomposition for 2 different methods'''
 kernel_pywl = 'cmor1.5-1.0'  # 'cmor'# #kind of wavelet kernel'gaussian'#
@@ -126,12 +147,24 @@ if wav_method == 'niko':
         sampling_dt, kernel_name =  kernel_niko)
 
 
+
+
 '''satore/read the amplitude and phase of the waveleets in/from numpy files'''
 name_files = data + sig_tag + '_' + 'Nska_'+str(len(frequencies))+ unit + '_' + wav_method + '_' + kernel_pywl
 #wc.write_amplitude_phase_wav(waves_pywt, name_files_pywt)
 wc.write_amplitude_phase_scale_wav(waves, 1.0 / frequencies, name_files)
 #amplitude, phase = wc.read_wavelets(name_files_pywt)
 print("\n npy files stored in ", name_files, '\n')
+
+'''call to create surrogates'''
+
+for w,f  in zip(waves, freq_bands):
+    name = 'ENSO_manuel_month_niko_cmor1.5-1.0_surr'
+    ident = sig_tag + '_f' + '{:03d}'.format(int(1000*f))
+
+    su.many_surrogates('surr_circular', ident, w,
+                       min_shift=30, n_surrogates=111)
+
 
 '''reconstruct the signal form the wavelets'''
 rec_signal_niko = wc.wav_reconstructed_signal(sig, waves, no_amp=False, individual_amp=True)
@@ -152,4 +185,5 @@ wp.plot_scalogram_fft_signal_together(
 #wp.plot_waves_amplitude_phase_WL('python wavelet', sig, rec_signal_pywt, waves_pywt, freq_bands_pywt )
 #wp.plot_waves_amplitude_phase_WL('niko wavelet', sig, rec_signal_niko, waves_niko, freq_bands_niko)
 #wp.plot_comparison_methods(waves_pywt[0], waves_niko[0], sig, rec_signal_pywt, rec_signal_niko)
-wp.plot_all()
+#wp.plot_all()
+

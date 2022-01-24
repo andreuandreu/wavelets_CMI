@@ -102,9 +102,6 @@ def plot_comoludogram(scales, phase_TE, phase_amp_TE):
         ax.tick_params(axis='both', which='major', labelsize=20)
         ax.set_title(tit, size=30)
 
-
-
-
         if 'ENSO' in folder or 'rain' in folder:
             ax.xaxis.set_major_locator(MultipleLocator(12))
             ax.xaxis.set_major_formatter(

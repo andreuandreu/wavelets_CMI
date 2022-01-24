@@ -19,7 +19,7 @@ def many_surrogates(root, name, data, min_shift=1, n_surrogates = 111, txt = Fal
     folder = './data/surrogates'
     surrogates = np.array([])
     for i in range(n_surrogates):
-        if i % 11: print('surogate num', i)
+        #if i % 11 == 1: print('surogate num', i)
         
         data_shifted, shift = circular_surrogate(data, min_shift)
         surrogates = np.append(surrogates, data_shifted)
@@ -31,6 +31,8 @@ def many_surrogates(root, name, data, min_shift=1, n_surrogates = 111, txt = Fal
     
     name_file = folder + '/' + root + '_' + \
         name  + '.npy'
+
+    print ('ssssssssssssss', np.shape(surrogates), np.size(surrogates))
     np.save(name_file, surrogates)
 
     

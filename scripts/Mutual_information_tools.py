@@ -15,7 +15,7 @@ def compure_MI_delays(dataX, dataY, delay):
     MI_entEst_mnv = []
     MI_entEst = []
     MI_entEst_naive = []
-    MI_score = []
+
 
     
     for d in range(1, delay):
@@ -27,6 +27,5 @@ def compure_MI_delays(dataX, dataY, delay):
         MI_entEst_naive.append(eec.get_mi(
             dataX[:-d], dataY[d:], k=16, estimator='naive'))
 
-        MI_score.append( mutual_info_score(dataX[:-d], dataY[d:]) )
 
-    return np.array(MI_entEst), np.array(MI_entEst_mnv), np.array(MI_score), np.array(MI_entEst_naive)
+    return np.array(MI_entEst), np.array(MI_entEst_mnv),  np.array(MI_entEst_naive)

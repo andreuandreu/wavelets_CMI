@@ -9,7 +9,7 @@ using DataFrames
 using NPZ
 using ConfParser
 using InformationMeasures
-
+using Statistics
 
 #Pkg.add("DelayEmbeddings")
 
@@ -32,6 +32,20 @@ function changevector!(A, τ, I)
         end
     end
     return B
+end
+
+
+"loading functions"
+
+function read_rossler()
+    n_points = 131072
+    couplings = LinRange(0, 0.25, 99)
+    #root = "../data/exp_raw/binfiles/Rossler_bin_"
+    #root = "/Users/andreu/Desktop/Dropbox/transfer_inormation_prague/code/binfiles/Rossler_bin_"
+    root = "../../../TE_EG_project/package_CMI_prague/data/exp_raw/binfiles/Rossler_bin_"
+    test_couplings = read_bin_couplings(root, n_points, couplings)
+
+    return test_couplings
 end
 
 
@@ -66,6 +80,25 @@ function load_npy_data(ep)
 
 end
 
+
+
+function load_surrogates(ep, freq)
+
+    sets_of_surrogates = Array{AbstractArray}(undef, length(freq), 1)
+
+    for (i, f) in enumerate(freq)
+        name = "./data/" * "surrogates/" * "surr_" * ep.data_name * f * ".npy"
+        println(f, name)
+        sets_of_surrogates[i] = npzread(name)
+
+    end
+
+    return sets_of_surrogates
+
+end
+
+
+"inizailzation functions"
 
 
 function inizilaize_one_embeding()
@@ -192,8 +225,6 @@ function load_embedings_params(name_conf_file)
 end
 
 
-
-
 struct embedings_params
     "
     define the parameters to define the embeding characteristics
@@ -214,17 +245,7 @@ struct embedings_params
 end
 
 
-function read_rossler()
-    n_points = 131072
-    couplings = LinRange(0, 0.25, 99)
-    #root = "../data/exp_raw/binfiles/Rossler_bin_"
-    #root = "/Users/andreu/Desktop/Dropbox/transfer_inormation_prague/code/binfiles/Rossler_bin_"
-    root = "../../../TE_EG_project/package_CMI_prague/data/exp_raw/binfiles/Rossler_bin_"
-    test_couplings = read_bin_couplings(root, n_points, couplings)
-
-    return test_couplings
-end
-
+"compute stuff"
 
 function write_entropies_tau(name, entropies)
 
@@ -238,34 +259,23 @@ function write_entropies_tau(name, entropies)
 
 end
 
-function TE_means(dataX, dataY, output_name, τ_range, τ_delays, emb_dim, estimator)
+function TE_manyY_means(dataX, dataY, output_name, τ_range, τ_delays, emb_dim, estimator)
 
     "
-    compute many TE and measure a mean
+    compute TE and measure a mean for a set of T timeseries
     "
 
     open(output_name, "w") do file
-        @suppress_err begin
-            for i = 1:size(dataY, 1)
-                #println("doing something? ", i)
-                mean_TE = 0
-                entropies = zeros(0)
-
-                for t in τ_range
-                    ts = changevector!(τ_delays, t, 2)
-                    joint = DelayEmbeddings.genembed(Dataset(dataX, dataY[i, :]), ts, emb_dim)
-                    entropy = tranfserentropy(joint, estimator)
-                    append!(entropies, entropy)
-                    #entropy = tranfserentropy(joint, VisitationFrequency(b); embdim = 5, α =1.0, base =2)
-                    #entropy = tranfserentropy(joint, KozachenkoLeonenko(1,8),  2)
-                    mean_TE += entropy / length(τ_range)
-                end
-                file_name = output_name[1:end-4] * "_Yset-" * string(i) * ".txt"
-                write_entropies_tau(file_name, entropies)
-                #println("now doing", dataChar[i], ' ', mean_TE)
-                write(file, "$mean_TE\n")
-            end
+        for i = 1:size(dataY, 1)
+            #println("doing something? ", i)
+            entropies = TE_each_delay(dataX, dataY, output_name, τ_range, τ_delays, emb_dim, estimator)
+            file_name = output_name[1:end-4] * "_Yset-" * string(i) * ".txt"
+            write_entropies_tau(file_name, entropies)
+            #println("now doing", dataChar[i], ' ', mean_TE)
+            write(file, "$mean_TE\n")
         end
+
+
     end
 
 
@@ -277,13 +287,14 @@ function TE_each_delay(dataX, dataY, output_name, τ_range, τ_delays, emb_dim, 
     "
     compute many TE for each tau delay
     "
-    τ_delays = (0,0)
-    emb_dim = (1,2)
+
     file_name = output_name[1:end-4] * "_each-tau" * ".txt"
+
+    entropies = zeros(0)
     open(file_name, "w") do file
         @suppress_err begin
-            for t in τ_range
-
+            for t in τ_range[1:end-1]
+                println("tttt  ", τ_delays, t)
                 ts = changevector!(τ_delays, t, 2)
                 joint = DelayEmbeddings.genembed(Dataset(dataX, dataY), ts, emb_dim)
                 entropy = tranfserentropy(joint, estimator)
@@ -291,13 +302,12 @@ function TE_each_delay(dataX, dataY, output_name, τ_range, τ_delays, emb_dim, 
                 #entropy = tranfserentropy(joint, KozachenkoLeonenko(1,8),  2)
                 println("doing something? delay ", t, "  ", entropy)
                 write(file, "$entropy\n")
+                append!(entropies, entropy)
+
             end
-            #println("now doing", dataChar[i], ' ', mean_TE)
-
         end
-
     end
-
+    return mean(entropies)
 
 end
 
@@ -309,9 +319,11 @@ function MI_each_delay(dataX, dataY, output_name, τ_range, τ_delays)
     compute many MI for each tau delay
     "
     file_name = output_name[1:end-4] * "_MI_each-tau" * ".txt"
+    #τ_delays = (0, 0)
+    #emb_dim = (1, 2)
 
     open(file_name, "w") do file
-        for t in τ_range
+        for t in τ_range - 1
             mi_12 = get_mutual_information(dataX[1:end-t], dataY[t:end])
             ts = changevector!(τ_delays, t, 2)
             joint = DelayEmbeddings.genembed(Dataset(dataX, dataY), ts, emb_dim)
@@ -354,6 +366,27 @@ function data_rows_TE(ep, base_name_output_file, τ_range, τ_delays, emb_dim, e
 
 end
 
+"compute stuff with surrogates"
+
+function TE_surrogate_set(surrogate_set, dataY, output_name, τ_range, τ_delays, emb_dim, estimator)
+    entropies = zeros(0)
+    count = 0
+    for s in surrogate_set
+        count += 1
+        ampl = abs.(s[1:end-1])
+        TE = TE_each_delay(ampl, dataY, output_name,
+            τ_range, τ_delays, emb_dim, estimator)
+
+        append!(entropies, TE)
+
+        println(TE)
+    end
+    return entropies
+
+end
+
+
+
 
 
 name_conf_file = ARGS[1]
@@ -363,11 +396,15 @@ estimator, τ_range, τ_delays, emb_dim, base_name_output_file = inizilaize_embe
 #data_rows_TE(ep, base_name_output_file, τ_range, τ_delays, emb_dim, estimator)
 
 dataX, dataY, dataChar = load_npy_data(ep)
+frequencies = ["_f009", "_f010"]
+surrogates = load_surrogates(ep, frequencies)
+
+println("sizes of surrogates ", size(surrogates), size(surrogates[1]))
 output_name = name_output_file = ep.root * ep.export_folder * base_name_output_file * ".txt"#"./data/output/delay_rossler_phase.txt"
-
-
+output_surr_nam = "./data" * "/surrogates" * "/surr_" * base_name_output_file * ".txt"
+TE_surrogate_set(surrogates[1, :], dataY[1, :], output_surr_nam, τ_range, τ_delays, emb_dim, estimator)
 #TE_each_delay(dataX[1, :], dataY[1, :], output_name, τ_range, τ_delays, emb_dim, estimator)
-MI_each_delay(dataX[1, :], dataY[1, :], output_name, τ_range, (0, 1))
+#MI_each_delay(dataX[1, :], dataY[1, :], output_name, τ_range, (0, 1))
 
 
 
