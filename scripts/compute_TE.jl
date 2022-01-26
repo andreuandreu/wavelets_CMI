@@ -370,10 +370,17 @@ end
 
 function TE_surrogate_set(surrogate_set, dataY, output_name, τ_range, τ_delays, emb_dim, estimator)
     entropies = zeros(0)
-    count = 0
-    for s in surrogate_set
-        count += 1
+    println("angusssshhh", size(surrogate_set[:, 1]), size(surrogate_set[1, :]),
+        size(surrogate_set[1, 2]), size(surrogate_set[1, 1, 1]))
+    ss = surrogate_set[1, :]
+    println("dddd", size(ss))
+    println("aaaa", size(ss[:, 1]))
+    for i = 1:length(ss[:, 1])
+        println("sssss ", i, "   ", size(ss[i, :]))
+        s = ss[i, :]
+        println(s[1:10])
         ampl = abs.(s[1:end-1])
+        println(size(s[1:end-1]))
         TE = TE_each_delay(ampl, dataY, output_name,
             τ_range, τ_delays, emb_dim, estimator)
 
@@ -399,10 +406,10 @@ dataX, dataY, dataChar = load_npy_data(ep)
 frequencies = ["_f009", "_f010"]
 surrogates = load_surrogates(ep, frequencies)
 
-println("sizes of surrogates ", size(surrogates), size(surrogates[1]))
+
 output_name = name_output_file = ep.root * ep.export_folder * base_name_output_file * ".txt"#"./data/output/delay_rossler_phase.txt"
-output_surr_nam = "./data" * "/surrogates" * "/surr_" * base_name_output_file * ".txt"
-TE_surrogate_set(surrogates[1, :], dataY[1, :], output_surr_nam, τ_range, τ_delays, emb_dim, estimator)
+output_surr_nam = "./data" * "/surrogates" * "/sur_cir" * base_name_output_file * ".txt"
+TE_surrogate_set(surrogates[1,:], dataY[1, :], output_surr_nam, τ_range, τ_delays, emb_dim, estimator)
 #TE_each_delay(dataX[1, :], dataY[1, :], output_name, τ_range, τ_delays, emb_dim, estimator)
 #MI_each_delay(dataX[1, :], dataY[1, :], output_name, τ_range, (0, 1))
 

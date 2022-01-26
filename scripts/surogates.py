@@ -17,12 +17,20 @@ def circular_surrogate(data, min_shift= 1):
 def many_surrogates(root, name, data, min_shift=1, n_surrogates = 111, txt = False):
     '''creates and stores a list of n surrogates given a timeseries '''
     folder = './data/surrogates'
-    surrogates = np.array([])
+
+    #surrogates = np.zeros((n_surrogates, len(data)+1))
+    #surrogates = np.array([])
+    #surrogates = np.zeros(n_surrogates)
+    surrogates = np.empty(n_surrogates, dtype=None)
+    surrogates = []
     for i in range(n_surrogates):
         #if i % 11 == 1: print('surogate num', i)
         
         data_shifted, shift = circular_surrogate(data, min_shift)
-        surrogates = np.append(surrogates, data_shifted)
+        #surrogates[i] = np.append(data_shifted, shift)
+        surrogates.append(np.append(data_shifted, shift))
+        #np.append(data_shifted, shift)
+        #np.append(surrogates, [data_shifted], axis=0)
         if txt:
             name_file = folder + '/' + root + '_' + \
                 name + '_' + "{0:0>3}".format(i) + '.txt'
@@ -31,9 +39,8 @@ def many_surrogates(root, name, data, min_shift=1, n_surrogates = 111, txt = Fal
     
     name_file = folder + '/' + root + '_' + \
         name  + '.npy'
-
-    print ('ssssssssssssss', np.shape(surrogates), np.size(surrogates))
-    np.save(name_file, surrogates)
+    print('surrrrrr', np.shape(surrogates))
+    np.save(name_file, np.array(surrogates))
 
     
 

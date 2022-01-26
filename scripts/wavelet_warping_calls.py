@@ -158,11 +158,11 @@ print("\n npy files stored in ", name_files, '\n')
 
 '''call to create surrogates'''
 
-for w,f  in zip(waves, freq_bands):
-    name = 'ENSO_manuel_month_niko_cmor1.5-1.0_surr'
+for w, f  in zip(waves, freq_bands):
+    name = 'sur_circ_ENSO_manuel_month_niko_cmor1.5-1.0'
     ident = sig_tag + '_f' + '{:03d}'.format(int(1000*f))
 
-    su.many_surrogates('surr_circular', ident, w,
+    su.many_surrogates(name, ident, w,
                        min_shift=30, n_surrogates=111)
 
 
