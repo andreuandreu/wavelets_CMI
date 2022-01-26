@@ -29,6 +29,7 @@ def many_surrogates(root, name, data, min_shift=1, n_surrogates = 111, txt = Fal
         data_shifted, shift = circular_surrogate(data, min_shift)
         #surrogates[i] = np.append(data_shifted, shift)
         surrogates.append(np.append(data_shifted, shift))
+        #surrogates.append(data_shifted)
         #np.append(data_shifted, shift)
         #np.append(surrogates, [data_shifted], axis=0)
         if txt:
@@ -39,8 +40,9 @@ def many_surrogates(root, name, data, min_shift=1, n_surrogates = 111, txt = Fal
     
     name_file = folder + '/' + root + '_' + \
         name  + '.npy'
-    print('surrrrrr', np.shape(surrogates))
-    np.save(name_file, np.array(surrogates))
+    print(name_file)
+    #print('surrrrrr', np.shape(surrogates))
+    np.save(name_file, surrogates)
 
     
 
