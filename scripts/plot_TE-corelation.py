@@ -78,6 +78,18 @@ def load_TransferEntropies(folder, root_name):
     return TEs_matrix
 
 
+def load_surrogateEntropies(folder, root_name):
+
+    name_files = fnmatch.filter(os.listdir(folder), root_name+'*')
+    size = len(name_files)
+
+    TEs_matrix = np.empty(shape=(size, 3, 11))
+    for i, n in enumerate(name_files[:-1]):
+        print(i, 'n', n)
+        TEs_matrix[i][:] = np.genfromtxt(folder+"/"+n, delimiter=' ',
+                                         dtype=("f8", "f8", "f8"), unpack=True, usecols=[0, 1, 2])
+    return TEs_matrix
+
 
 def plot_comoludogram(scales, phase_TE, phase_amp_TE):
     
@@ -124,14 +136,21 @@ def plot_comoludogram(scales, phase_TE, phase_amp_TE):
 #names = read_texts(sys.argv[1]) 
 #ax = plt.subplot(1, 1, 1) 
 #plot_subfigures(ax, names)
+folder = './data/output/corr_TE_ENSO_manuel_month_niko-cmor1_amp-amp'#sys.argv[1]
 
-folder = sys.argv[1]
-root_name = sys.argv[2]
+root_name = './data/output/corr_TE_ENSO_manuel_month_niko-cmor1_amp-amp'# sys.argv[2]
+
+surr_folder = './data/surrogates/surr_circ_ENSO_manuel_month_niko-cmor1'
+surr_root = 'surr_circ_Prob-est_VisFreq_b_bin-150_eDim-'
+pha_or_amp = '_amp'
 
 scales = np.arange(254)#np.load(sys.argv[3])
-TEs_matrix = load_TransferEntropies(folder, root_name)
-scales = np.arange(len(TEs_matrix))
-plot_comoludogram(scales, TEs_matrix, TEs_matrix)
+#TEs_matrix = load_TransferEntropies(folder, root_name)
+Surr_matrix = load_surrogateEntropies(surr_folder, surr_root)
+
+print(Surr_matrix[0])
+#scales = np.arange(len(TEs_matrix))
+#plot_comoludogram(scales, TEs_matrix, TEs_matrix)
 
 #ax = fig.add_subplot(111)
 
