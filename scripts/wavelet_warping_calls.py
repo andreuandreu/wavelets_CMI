@@ -79,7 +79,7 @@ if sig_tag == 'rossler_phase':
 if sig_tag == 'ENSO_online':
     t, sig = ps.online_ENSO_34()
 
-if sig_tag == 'ENSO_manuel':
+if 'ENSO_manuel' in sig_tag:
     t, sig = ps.read_ENSO_rain_manuel_files(name_source[sig_tag])
     sig = sig*20
 
@@ -121,7 +121,15 @@ print('\n sampling period, last time and length of time', sampling_dt, t[-1], le
 if sig_tag == 'synthetic':
     frequencies = np.array(seed_freq)
 else:
-    frequencies = 1/((np.arange(1, 72)*sampling_dt))  #
+    number_of_freq = 11
+    max_period = 237
+    min_period = 2
+    period_ratio = np.log10(max_period)
+    frequencies = 1/((min_period+np.arange(0, number_of_freq)**period_ratio))  
+    print ('fffffff', frequencies, 'pppppppppp', 1/frequencies)
+
+str_periods = 'p' + \
+    str(int(1/frequencies[0])) + '-' + str(int(1/frequencies[-1]))
 
 '''automatic frequecy scaling done by measuring the modes of the fourier transform'''
 #par = wc.wavelets_scaling()
@@ -150,24 +158,29 @@ if wav_method == 'niko':
 
 
 '''satore/read the amplitude and phase of the waveleets in/from numpy files'''
-name_files = data + sig_tag + '_' + 'Nska_'+str(len(frequencies))+ unit + '_' + wav_method + '_' + kernel_pywl
+name_files = data + sig_tag + '_' + 'Nska_'+str(len(frequencies))+ unit + '_' +\
+     wav_method + '_' + kernel_pywl + '_' + str_periods
 #wc.write_amplitude_phase_wav(waves_pywt, name_files_pywt)
 wc.write_amplitude_phase_scale_wav(waves, 1.0 / frequencies, name_files)
 #amplitude, phase = wc.read_wavelets(name_files_pywt)
 print("\n npy files stored in ", name_files, '\n')
 
+
+
+
 '''call to create surrogates'''
-
 for w, f  in zip(waves, freq_bands):
-    name = 'surr_circ_' + sig_tag + '_month_niko_cmor1.5-1.0'
-    ident = 'f' + '{:04d}'.format(int(10000*f))
-
+    name = 'surr_circ_' + sig_tag + '_month_niko_' + kernel_niko
+    #ident = 'f' + '{:04d}'.format(int(10000*f))
+    ident = 'p' + '{:04d}'.format(int(1/f))
     su.many_surrogates(name, ident, w,
                        min_shift=30, n_surrogates=111)
 
 
 '''reconstruct the signal form the wavelets'''
 rec_signal_niko = wc.wav_reconstructed_signal(sig, waves, no_amp=False, individual_amp=True)
+
+
 
 '''plot signals and wavelets'''
 wp.plot_signal_phase_fft(t, sig, unit, freq_spectrum, frequencies, fft1d)
@@ -185,5 +198,5 @@ wp.plot_scalogram_fft_signal_together(
 #wp.plot_waves_amplitude_phase_WL('python wavelet', sig, rec_signal_pywt, waves_pywt, freq_bands_pywt )
 #wp.plot_waves_amplitude_phase_WL('niko wavelet', sig, rec_signal_niko, waves_niko, freq_bands_niko)
 #wp.plot_comparison_methods(waves_pywt[0], waves_niko[0], sig, rec_signal_pywt, rec_signal_niko)
-#wp.plot_all()
+wp.plot_all()
 

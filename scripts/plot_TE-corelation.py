@@ -20,7 +20,7 @@ import fnmatch
 #obtained as x(t),x(t-5),x(t-10), where 5 and 10 are lags in number of samples
 #python plot_TE-corelation.py ./correlations_TE_files.txt ./correlations_TE_files2.txt
 
-#python ./scripts/plot_TE-corelation.py ./data/output/correlations_TE/couplings_meanTE_Knn150-0_1.txt Prob-est_VisFreq_b150
+#python ./scripts/plot_TE-corelation.py 
 def read_data(name):
     usecols = [0,1]
     print (name)
@@ -69,8 +69,7 @@ def load_TransferEntropies(folder, root_name):
     
 
     size = len(name_files) 
-
-    TEs_matrix = np.empty( shape=(size, size))
+    TEs_matrix = np.empty( shape=(size, 254))
     for i, n in enumerate(name_files[:-1]):
 
         TEs_matrix[i][:] = np.genfromtxt(folder+n, delimiter=' ',
@@ -84,32 +83,44 @@ def load_surrogateEntropies(folder, root_name):
     size = len(name_files)
 
     TEs_matrix = np.empty(shape=(size, 3, 11))
-    for i, n in enumerate(name_files[:-1]):
+    surr_TE_matrix = np.empty(shape=(size, 11))
+    for i, n in enumerate(name_files):
         print(i, 'n', n)
         TEs_matrix[i][:] = np.genfromtxt(folder+"/"+n, delimiter=' ',
                                          dtype=("f8", "f8", "f8"), unpack=True, usecols=[0, 1, 2])
-    return TEs_matrix
+        surr_TE_matrix[i][:] = TEs_matrix[i][2][:]
+    return TEs_matrix, surr_TE_matrix
 
+def subtract_matrices(matA, matB):
 
-def plot_comoludogram(scales, phase_TE, phase_amp_TE):
+    rA, cA = matA.shape
+    subtraction = -matA + matB[0:rA, 0:cA]
+    print (subtraction)
+    return subtraction
+
+def plot_comoludogram(scales, phasPhas_TE, phasAmp_matrix):
     
     fig = plt.figure(figsize=(15, 7.5))
 
-    xaxe, yaxe = np.meshgrid(scales, scales)
-    print(scales, xaxe)
+    a = np.linspace(0, 1, phasPhas_TE.shape[0])
+    b = np.linspace(0, 1, phasPhas_TE.shape[1])
+
+    xaxe, yaxe = np.meshgrid(a, b)
+
+    print(scales, xaxe, yaxe)
     gs = gridspec.GridSpec(1, 2)
     gs.update(left=0.05, right=0.95, hspace=0.3,
                 top=0.95, bottom=0.05, wspace=0.15)
     axs = [gs[0, 0], gs[0, 1]]
-    toplot = [phase_TE.T, phase_amp_TE.T]
+    toplot = [phasPhas_TE.T, phasAmp_matrix.T]
     #toplot = [phase_TE, phase_amp_TE]
     tits = ['PHASE-PHASE CAUSALITY', 'PHASE-AMP CAUSALITY']
     labs = ['PHASE', 'AMP']
-
+    max_mat = max(map(max, phasAmp_matrix))
     for ax, cont, tit, lab in zip(axs, toplot, tits, labs):
         ax = plt.subplot(ax)
         cs = ax.contourf(xaxe, yaxe, cont, levels=np.arange(
-            0.0, 1, 0.00125), cmap=plt.cm.get_cmap("jet"), extend='max')
+            0.0, max_mat, 0.00125), cmap=plt.cm.get_cmap("jet"), extend='max')
         # cs = ax.contourf(x, y, cont, levels = np.arange(4, 20, 0.125), cmap = plt.cm.get_cmap("jet"), extend = 'max')
         ax.tick_params(axis='both', which='major', labelsize=20)
         ax.set_title(tit, size=30)
@@ -124,34 +135,37 @@ def plot_comoludogram(scales, phase_TE, phase_amp_TE):
                 FuncFormatter(lambda x, pos: int(x)/12))
             ax.yaxis.set_minor_locator(MultipleLocator(6))
             ax.set_xlabel("PERIOD PHASE [years]", size=23)
-            # plt.colorbar(cs)
+            plt.colorbar(cs)
             ax.grid()
             ax.set_ylabel("PERIOD %s [years]" % lab, size=23)
     #plt.savefig('plots/nino34-CESMhigh.eps', bbox_inches="tight")
 
     
-
 #fig = plt.figure('name')
 #ax = plt.subplot(1, 1, 1) 
 #names = read_texts(sys.argv[1]) 
 #ax = plt.subplot(1, 1, 1) 
 #plot_subfigures(ax, names)
-folder = './data/output/corr_TE_ENSO_manuel_month_niko-cmor1_amp-amp'#sys.argv[1]
-
-root_name = './data/output/corr_TE_ENSO_manuel_month_niko-cmor1_amp-amp'# sys.argv[2]
+# sys.argv[1]
+folder = './data/output/corr_TE_ENSO_manuel_month_niko-cmor1_amp-amp/'
+root_name = 'Prob-est_VisFreq_b150'  # sys.argv[2]
 
 surr_folder = './data/surrogates/surr_circ_ENSO_manuel_month_niko-cmor1'
 surr_root = 'surr_circ_Prob-est_VisFreq_b_bin-150_eDim-'
 pha_or_amp = '_amp'
 
-scales = np.arange(254)#np.load(sys.argv[3])
-#TEs_matrix = load_TransferEntropies(folder, root_name)
-Surr_matrix = load_surrogateEntropies(surr_folder, surr_root)
+#scales = np.arange(254)#np.load(sys.argv[3])
 
-print(Surr_matrix[0])
+
+TEs_matrix = load_TransferEntropies(folder, root_name)
+Surr_data, surr_TE_matrix = load_surrogateEntropies(surr_folder, surr_root)
+subMat = subtract_matrices(surr_TE_matrix, TEs_matrix)
+
+
 #scales = np.arange(len(TEs_matrix))
 #plot_comoludogram(scales, TEs_matrix, TEs_matrix)
 
+plot_comoludogram(11, subMat, surr_TE_matrix)
 #ax = fig.add_subplot(111)
 
 plt.show()
