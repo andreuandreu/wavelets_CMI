@@ -96,7 +96,7 @@ def pywt_compute_wavelets(sig, frequencies, kernel_name='cmor1.5-1.0'):
 
 def niko_compute_wavelets(sig, frequencies, sampling_dt, kernel_name = 'morlet' ):
 
-    k0 = 9. #defines the size of the wavelet kernel, the bigger the smother, but eats up the edges of the data
+    k0 = 6. #defines the size of the wavelet kernel, the bigger the smother, but eats up the edges of the data
     if kernel_name == 'morlet':
         wavelet_kernel = wa.MorletWavelet()
     else:
@@ -141,9 +141,6 @@ def write_amplitude_phase_scale_wav(waves, scales, name_file):
     np.save(name_file+'_amp.npy', amp, allow_pickle=True, fix_imports=True)
     np.save(name_file+'_pha.npy', phase, allow_pickle=True, fix_imports=True)
     np.save(name_file+'_ska.npy', scales, allow_pickle=True, fix_imports=True)
-    print(' \n saving amplitude ', name_file+'_amp.npy')
-    print(' saving phase in ', name_file+'_pha.npy')
-    print(' saving phase in ', name_file+'_ska.npy\n')
     return amp, phase
 
 def wav_reconstructed_signal(sig, waves, no_amp = True, individual_amp = False, global_amp = False ):
@@ -181,7 +178,7 @@ def wav_reconstructed_signal(sig, waves, no_amp = True, individual_amp = False, 
         #reescale each amplitude and recosntruc signal
         for i, w in enumerate(waves):
             fit_x = np.vstack( [w, np.ones((w.shape[0]))] ).T
-            slopes_vector[i], c = np.linalg.lstsq(fit_x, sig)[0]
+            slopes_vector[i], c = np.linalg.lstsq(fit_x, sig, rcond=None)[0]
         rec_signal = reconstruction(rec_signal, slopes_vector) 
         return rec_signal
 
