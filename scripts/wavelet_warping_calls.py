@@ -1,3 +1,4 @@
+from turtle import end_fill
 import numpy as np
 import provide_signals as ps
 import wavelets_computation as wc
@@ -5,6 +6,7 @@ import wavelets_ploting as wp
 import configparser
 import surogates as su
 import matplotlib.pyplot as plt
+import os
 '''
 code that warps the functions necessary tu do a preliminary analysis of a guiven signal in 
 wavelets, save them in .npy files and plot them.
@@ -47,9 +49,7 @@ IMPORTANT the most significant things in this script are
 
 
 '''folder for data output'''
-data = './data/output/'  # '../data/' in case you are in the scripts folder
-
-
+data_output_dir = './data/output/'  # '../data/' in case you are in the scripts folder
 
 name_source = {
     'rain_india_manuel': './data/imput/s_allindiarain18712016.csv',
@@ -83,6 +83,12 @@ if 'ENSO_manuel' in sig_tag:
     t, sig = ps.read_ENSO_rain_manuel_files(name_source[sig_tag])
     sig = sig*20
 
+    step_period = 2 #months
+    max_period = 82 #months
+    min_period = 6 #months
+    frequencies = 1./(np.arange(min_period, max_period, step_period))
+    #print ('fffffffENSOMAN', frequencies, 'pppppppppp', 1/frequencies)
+
 if sig_tag == 'rain_india_manuel':
     t, sig = ps.read_ENSO_rain_manuel_files(name_source[sig_tag])
 
@@ -106,11 +112,10 @@ if sig_tag == 'sinthetic':
     t, sig = ps.get_ave_values(t, sig, 3)
 
 
-
 '''characteristics of the signal and the processing'''
 unit = 'month'
 #unit = 'Hz'
-
+log_frec = False
 '''correct the signal time in spacific cases, depending on the units'''
 if unit == 'month' and 'manuel' in sig_tag:
     t = np.arange(0, len(sig))
@@ -120,13 +125,16 @@ print('\n sampling period, last time and length of time', sampling_dt, t[-1], le
 #frequencies = 1/np.array([0.083, 0.1,0.5,0.9,1,2,4,5,6,7,8, 16, 32,64, 126])#
 if sig_tag == 'synthetic':
     frequencies = np.array(seed_freq)
-else:
+elif log_frec == True:
     number_of_freq = 11
     max_period = 237
     min_period = 2
     period_ratio = np.log10(max_period)
     frequencies = 1/((min_period+np.arange(0, number_of_freq)**period_ratio))  
     print ('fffffff', frequencies, 'pppppppppp', 1/frequencies)
+
+
+
 
 str_periods = 'p' + \
     str(int(1/frequencies[0])) + '-' + str(int(1/frequencies[-1]))
@@ -138,8 +146,6 @@ str_periods = 'p' + \
 '''compute 1d fourier transformation'''
 freq_spectrum, fft1d = wc.FFT(t, sig)#fft(sig)/len(t)
 nyquist = int(len(fft1d))
-
-
 
 '''compute wavelet decomposition for 2 different methods'''
 kernel_pywl = 'cmor1.5-1.0'  # 'cmor'# #kind of wavelet kernel'gaussian'#
@@ -155,26 +161,34 @@ if wav_method == 'niko':
         sampling_dt, kernel_name =  kernel_niko)
 
 
-
-
 '''satore/read the amplitude and phase of the waveleets in/from numpy files'''
-name_files = data + sig_tag + '_' + 'Nska_'+str(len(frequencies))+ unit + '_' +\
-     wav_method + '_' + kernel_pywl + '_' + str_periods
+output_dir = data_output_dir + sig_tag + '_' + 'Nska_'+str(len(frequencies))+ unit + '/'
+name_files = sig_tag + '_' + wav_method + '_' + kernel_niko + '_' + str_periods
 #wc.write_amplitude_phase_wav(waves_pywt, name_files_pywt)
-wc.write_amplitude_phase_scale_wav(waves, 1.0 / frequencies, name_files)
+
+if not os.path.exists(output_dir):
+    os.makedirs(output_dir)
+
+wc.write_amplitude_phase_scale_wav(waves, 1.0 / frequencies, output_dir+name_files)
 #amplitude, phase = wc.read_wavelets(name_files_pywt)
-print("\n npy files stored in ", name_files, '\n')
 
-
+print(' \n saving amplitude ', output_dir+name_files + '_amp.npy')
+print(' saving phase in ', output_dir+name_files + '_pha.npy')
+print(' saving phase in ', output_dir+name_files + '_ska.npy\n')
 
 
 '''call to create surrogates'''
+n_surrogates = 111
+
 for w, f  in zip(waves, freq_bands):
-    name = 'surr_circ_' + sig_tag + '_month_niko_' + kernel_niko
+    surr_name = 'surr_circ_' + name_files
     #ident = 'f' + '{:04d}'.format(int(10000*f))
-    ident = 'p' + '{:04d}'.format(int(1/f))
-    su.many_surrogates(name, ident, w,
-                       min_shift=30, n_surrogates=111)
+    surr_ident = 'p' + '{:04d}'.format(int(1/f))
+    su.many_surrogates( output_dir + surr_name + surr_ident,  w,
+                       min_shift=30, n_surrogates=n_surrogates)
+    
+print('\nsurr stored withthis path name', output_dir + surr_name + surr_ident, '\n')
+
 
 
 '''reconstruct the signal form the wavelets'''

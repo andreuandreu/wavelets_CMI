@@ -3,5 +3,6 @@
         "coeffs",
         "xlabel",
         "yticks"
-    ]
+    ],
+    "python.formatting.provider": "black"
 }

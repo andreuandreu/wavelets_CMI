@@ -85,9 +85,14 @@ def online_ENSO_34(dataset):
 
 def read_ENSO_rain_manuel_files(name):
     ''' read formated file'''
-    sig, dates = np.genfromtxt(name ,delimiter=',' ,
-           dtype="i4,f8,S10", names=['pos','dC_mon','DATE'],
-           skip_header=True, unpack=True, usecols=[1, 2])
+    print('nananana',name)
+    #index, sig, dates = np.genfromtxt(name ,delimiter=',' ,
+    #       dtype="i4,f8,S10", names=['pos','dC_mon','DATE'],
+    #       skip_header=True, unpack=True, usecols=[0, 1, 2])
+
+    data = pd.read_csv(name).T.values
+    sig = data[1]
+    dates = data[2]
     #sig = [item for sub_list in allsig for item in sub_list]
     #t0 = 1870
     #N = len(sig)
