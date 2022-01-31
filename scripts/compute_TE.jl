@@ -71,7 +71,7 @@ function load_npy_data(ep)
 
     for (i, s) in enumerate(ep.sufixes)
 
-        name = ep.data_folder * ep.data_name * s
+        name = ep.data_folder * ep.input_folder * ep.in_data_tag * s
         datas[i] = npzread(name)
 
     end
@@ -82,12 +82,13 @@ end
 
 
 
-function load_surrogates(ep, freq, surr_root)
+function load_surrogates(freq, surr_root)
 
     sets_of_surrogates = Array{AbstractArray}(undef, length(freq), 1)
 
     for (i, f) in enumerate(freq)
-        name = "./data/" * "surrogates/" * surr_root * ep.data_name * f * ".npy"
+
+        name = surr_root * f * ".npy"
         println(f, name)
         sets_of_surrogates[i] = npzread(name)
 
@@ -112,7 +113,6 @@ function inizilaize_one_embeding()
 
     Bin = 150
     kind_of_ergodicity = Entropies.RectangularBinning(Bin)
-    root = "../data/output/corr_TE_"
     lag = 25
     #τ_delays = (Int,  -10, -5, 0, lag)
     τ_delays = (0, 0, lag)
@@ -135,9 +135,9 @@ function inizilaize_one_embeding()
     name = savename(prefix, dim, suffix)
 end
 
-function inizilaize_embedings(ep, pha_index)
+function inizilaize_embedings(ep, serieChar)
 
-    backwardLag = trunc(Int, -ep.phase_period[pha_index] / 4.0)
+    backwardLag = trunc(Int, serieChar / 4.0)
 
     kind_of_ergodicity = Entropies.RectangularBinning(ep.Bin)
 
@@ -168,9 +168,9 @@ end
 
 function get_emb_dim_name(ep)
 
-    auxs = "_"
+    auxs = ""
     for (i, e) in enumerate(ep.emb_dim)
-        auxs = auxs*string(ep.emb_dim[i])
+        auxs = auxs * string(ep.emb_dim[i])
     end
 
     extra_name_file = "_eDim-" * auxs#string(length(ep.emb_dim))
@@ -196,15 +196,15 @@ function load_embedings_params(name_conf_file)
     #name_tag = "couplings_meanTE_Knn"
 
 
-    name_tag = retrieve(conf, "names", "name_tag")
-    data_name = retrieve(conf, "names", "data_name")
+
+    data_folder = retrieve(conf, "folders", "data_folder")
+    input_folder = retrieve(conf, "folders", "input_folder")
+    export_folder = retrieve(conf, "folders", "export_folder")
+
+    in_data_tag = retrieve(conf, "names", "in_data_tag")
     sufixes_str = retrieve(conf, "names", "sufixes")
     pha_amp_com_str = retrieve(conf, "names", "pha_amp_com")
 
-
-    root = retrieve(conf, "folders", "root_folder")
-    data_folder = retrieve(conf, "folders", "data_folder")
-    export_folder = retrieve(conf, "folders", "export_folder")
 
     Bin = parse(Int64, retrieve(conf, "emb_par", "bins"))
     maxτ = parse(Int64, retrieve(conf, "emb_par", "max_tau"))
@@ -212,6 +212,7 @@ function load_embedings_params(name_conf_file)
     emb_dim_str = retrieve(conf, "emb_par", "embeding_dimension")
     period_range_str = retrieve(conf, "emb_par", "period_range")
 
+    name_tag = retrieve(conf, "prob_est", "name_tag")
     prob_est = retrieve(conf, "prob_est", "prob_kind")
 
     sufixes = []#Array{String}(undef, 3, 1)
@@ -234,13 +235,13 @@ function load_embedings_params(name_conf_file)
     min_period = parse(Int64, period_range_str[1])
     period_ratio = log10(max_period)
     phase_periods = []
-    for i in range(0, number_of_freq, step=1)
+    for i in range(0, number_of_freq, step = 1)
         append!(phase_periods, min_period + i^period_ratio)
     end
 
 
-    emb_par = embedings_params(data_name, name_tag, sufixes, pha_amp_com, root, data_folder,
-        export_folder, Bin, maxτ, jumpτ, emb_dim, phase_periods, prob_est)
+    emb_par = embedings_params(data_folder, input_folder, export_folder, in_data_tag,
+        sufixes, pha_amp_com, Bin, maxτ, jumpτ, emb_dim, phase_periods, name_tag, prob_est)
 
     return emb_par
 
@@ -251,19 +252,18 @@ struct embedings_params
     "
     define the parameters to define the embeding characteristics
     "
-
-    data_name::String
-    name_tag::String
+    data_folder::String
+    input_folder::String
+    export_folder::String
+    in_data_tag::String
     sufixes::Vector
     pha_amp_com::Vector
-    root::String
-    data_folder::String
-    export_folder::String
     Bin::Int64
     maxτ::Int64
     jumpτ::Int64
     emb_dim::Vector
     period_range::Vector
+    name_tag::String
     prob_est::String
 
 end
@@ -283,33 +283,38 @@ function write_entropies_tau(name, entropies)
 
 end
 
-function TE_many_means(dataX, dataY, output_name, estimator, τ_range, τ_delays, emb_dim)
+
+function TE_each_delay(dataX, dataY, ep, serieChar)
 
     "
-    compute TE and measure a mean for a set of T timeseries
+    compute many TE for each tau delay
     "
 
-    open(output_name, "w") do file
-        for i = 1:size(dataY, 1)
-            entropies = TE_each_delay(dataX, dataY, output_name, estimator, τ_range, τ_delays, emb_dim)
-            file_name = output_name[1:end-4] * "_Yset-" * string(i) * ".txt"
-            write_entropies_tau(file_name, entropies)
-            #println("now doing", dataChar[i], ' ', mean_TE)
-            write(file, "$mean_TE\n")
+    estimator, τ_range, τ_delays, emb_dim = inizilaize_embedings(ep, serieChar)
+
+    entropies = zeros(0)
+    @suppress_err begin
+        for t in τ_range[1:end-1]
+            ts = changevector!(τ_delays, t, 2)
+            joint = DelayEmbeddings.genembed(Dataset(dataX, dataY), ts, emb_dim)
+            entropy = tranfserentropy(joint, estimator)
+            #println("doing something? delay ", t, "  ", entropy)
+            append!(entropies, entropy)
+
         end
     end
+    return mean(entropies)
 end
 
 
 
-
-function TE_each_delay(dataX, dataY, output_name, ep)
+function TE_each_delay(dataX, dataY, output_name, ep, serieChar)
 
     "
     compute many TE for each tau delay and write it in a file
     "
-    index = 32
-    estimator, τ_range, τ_delays, emb_dim, extra_name = inizilaize_embedings(ep, index)
+
+    estimator, τ_range, τ_delays, emb_dim, extra_name = inizilaize_embedings(ep, serieChar)
     file_name = output_name[1:end-4] * extra_name * "_each-tau" * ".txt"
 
     entropies = zeros(0)
@@ -322,7 +327,7 @@ function TE_each_delay(dataX, dataY, output_name, ep)
                 entropy = tranfserentropy(joint, estimator)
                 #entropy = tranfserentropy(joint, VisitationFrequency(b); embdim = 5, α =1.0, base =2)
                 #entropy = tranfserentropy(joint, KozachenkoLeonenko(1,8),  2)
-                println("doing something? delay ", t, "  ", entropy)
+                #println("doing something? delay ", t, "  ", entropy)
                 write(file, "$entropy\n")
                 append!(entropies, entropy)
 
@@ -333,28 +338,6 @@ function TE_each_delay(dataX, dataY, output_name, ep)
 
 end
 
-
-function TE_each_delay(dataX, dataY, ep)
-
-    "
-    compute many TE for each tau delay
-    "
-    index = 32
-    estimator, τ_range, τ_delays, emb_dim = inizilaize_embedings(ep, index)
-
-    entropies = zeros(0)
-    @suppress_err begin
-        for t in τ_range[1:end-1]
-            ts = changevector!(τ_delays, t, 2)
-            joint = DelayEmbeddings.genembed(Dataset(dataX, dataY), ts, emb_dim)
-            entropy = tranfserentropy(joint, estimator)
-            println("doing something? delay ", t, "  ", entropy)
-            append!(entropies, entropy)
-
-        end
-    end
-    return mean(entropies)
-end
 
 
 
@@ -383,24 +366,35 @@ function MI_each_delay(dataX, dataY, output_name, τ_range, τ_delays)
 end
 
 
-
-function data_rows_TE(ep, base_name_output_file, τ_range, τ_delays, emb_dim, estimator)
+function TE_each_column(dataX, dataY, output_name, ep, serieChar)
 
     "
-    compute TE for each row of data in one of the two data files compared to the other
+    compute TE and measure a mean for a set of N timeseries (the Y one)
     "
-    dataX, dataY, dataChar = load_npy_data(ep)
 
-    if isdir(ep.root * ep.export_folder)
-        println("BE AWARE folder already exixts!!! \n")
-    else
-        mkdir(ep.root * ep.export_folder)
+    open(output_name, "w") do file
+        for i = 1:size(dataY, 1)
+            mean_entropy = TE_each_delay(dataX, dataY[i, :], ep, serieChar)# output_name, 
+            #file_name = output_name  * ".txt"
+            #write_entropies_tau(file_name, entropies)
+            #println("now doing", dataChar[i], ' ', mean_TE)
+            write(file, "$serieChar $mean_entropy\n")
+        end
     end
+end
 
+
+function TE_each_row(dataX, dataY, dataChar, ep, base_name_output_file)
+
+    "
+    compute TE for each row of data (the x one) in one of the two data files compared to the other
+    "
 
     for (i, char) in enumerate(dataChar)
-        name_output_file = ep.root * ep.export_folder * base_name_output_file * "$(@sprintf("%.2f", char))" * ".txt"
-        TE_many_means(dataX[i, :], dataY, name_output_file, τ_range, τ_delays, emb_dim, estimator)
+        name_output_file = ep.data_folder * ep.export_folder *
+                           base_name_output_file * "_row-p$(@sprintf("%.2i", char))" * ".txt"
+
+        TE_each_column(dataX[i, :], dataY, name_output_file, ep, char)
         if i % 20 == 3
             println("entropies have been stored in here ", name_output_file)
         end
@@ -415,7 +409,7 @@ end
 
 "compute stuff with surrogates"
 
-function TE_surrogate_set(surrogate_set, output_name, dataY, ep)
+function TE_surrogate_set(surrogate_set, output_name, dataX, ep, serieChar)
 
     "compute the TE of a guiven time series with a guiven set of surrogates, 
     measure the mean and store it given a pattern of x y names or characteristics"
@@ -424,16 +418,15 @@ function TE_surrogate_set(surrogate_set, output_name, dataY, ep)
     entropies = zeros(0)
     for i = 1:size(surrogate_set)[1]
         s = surrogate_set[i, :]
-        if occursin("_amp", output_name)
+        if occursin("-Amp", output_name)
             compute = abs.(s[1:end-1])
-        elseif occursin("_pha", output_name)
+        elseif occursin("-Pha", output_name)
             compute = angle.(s[1:end-1])
         else
             println("BE AWARE you are missing '_amp' or '_pha' in the name \n")
         end
 
-        #println("sSSSSSSSSSSSSSS", length(s))
-        TE = TE_each_delay(compute, dataY, ep)
+        TE = TE_each_delay(dataX, compute, ep, serieChar)
         #if i % 44 == 1
         #    println("random eeeeeent  ", i, "  ", TE)
         #end
@@ -444,57 +437,51 @@ function TE_surrogate_set(surrogate_set, output_name, dataY, ep)
 
 end
 
-function TE_all_surrogates(surr_path, names_surrogates, output_name, dataSerie, seriesChar, ep)
+function TE_all_surrogates(names_surrogates, output_name, dataSerie, serieChar, ep)
     #τ_range, τ_delays, emb_dim, estimator
     "
     for each set of surrogates, compute the TE with a given data series and print it in a file
     "
     extra_name_emb = get_emb_dim_name(ep)
-    name_file = output_name * extra_name_emb * ".txt"
+    name_out_file = output_name * extra_name_emb * "_p$(@sprintf("%.2i", serieChar))" * ".txt"
 
-    println("yeah guy", names_surrogates)
-    open(name_file, "w") do file
+
+    open(name_out_file, "w") do file
         for n in names_surrogates
-            surrogate_set = npzread(surr_path * n)
-            one_mean = TE_surrogate_set(surrogate_set, output_name, dataSerie, ep)
+            surrogate_set = npzread(ep.data_folder * ep.input_folder * n)
+            one_mean = TE_surrogate_set(surrogate_set, output_name, dataSerie, ep, serieChar)
 
             println("mmmmmmmm   ", n, "   ", one_mean)
             x = n[end-7:end-4]
-            write(file, "$x $seriesChar $one_mean\n")
+            write(file, "$x $serieChar $one_mean\n")
         end
     end
 end
 
 
-function data_rows_surrogates_TE(base_name_output_file, dataChar, dataSeries, ep)
+function TE_data_rows_surrogates(base_name_output_file, dataChar, dataSeries, 
+        tagSeries, amp_or_phase_surr,  ep)
 
     "
     compute TE for each row of data for each set of surrogates with varing frequencies (periods)
     "
 
     surr_root = "surr_circ_"
-    amp_or_phase_surr = "_amp"
+    
+    #amp_or_phase_surr = "-pha"
 
-    surr_path = "./data/" * "surrogates/"
-    names_surrogates = frequencies_names(surr_path, surr_root * ep.data_name)
+    println("NIGHTMARE in ", ep.data_folder * ep.input_folder * surr_root * ep.in_data_tag)
+    names_surrogates = frequencies_names(ep.data_folder * ep.input_folder, surr_root * ep.in_data_tag)
 
-    output_surr_name = surr_root * base_name_output_file
+    output_surr_root = ep.data_folder * ep.export_folder * surr_root * base_name_output_file
+    println("NIGHTMARE out ", output_surr_root)
 
-
-    if isdir(surr_path * surr_root * ep.export_folder)
-        println("BE AWARE folder already exixts!!! \n")
-    else
-        mkdir(surr_path * surr_root * ep.export_folder)
-    end
-    println("NIGHTMARE  ", surr_root * ep.export_folder, "    ", output_surr_name)
- 
     for (i, char) in enumerate(dataChar)
 
-        name_output_file = surr_path * surr_root * ep.export_folder * output_surr_name *
-                           "$(@sprintf("%.2f", char))" * amp_or_phase_surr
-
+        name_output_file = output_surr_root * tagSeries *"_Su"*amp_or_phase_surr
         println("NANANANA ", name_output_file)
-        TE_all_surrogates(surr_path, names_surrogates, name_output_file, dataSeries[i, :], char, ep)
+
+        TE_all_surrogates(names_surrogates, name_output_file, dataSeries[i, :], char, ep)
 
     end
 
@@ -511,7 +498,10 @@ function frequencies_names(path, key)
     "
 
     names = filter(x -> occursin(key, x), readdir(path))
-
+    #println("yeah guy", names_surrogates)
+    if length(names) < 1
+        throw(DomainError("this character is bad"))
+    end
     return names
 
 end
@@ -522,15 +512,32 @@ end
     name_conf_file = ARGS[1]
 
     ep = load_embedings_params(name_conf_file)
-    base_name = ep.name_tag * "_bin-" * string(ep.Bin)
+    base_name_output_file = ep.name_tag * "_bin-" * string(ep.Bin)
 
     dataX, dataY, dataChar = load_npy_data(ep)
-    #data_rows_TE(ep, base_name_output_file, τ_range, τ_delays, emb_dim, estimator)
 
-    data_rows_surrogates_TE(base_name, dataChar, dataY, ep)
+    if isdir(ep.data_folder * ep.export_folder)
+        println("BE AWARE folder already exixts!!! \n")
+    else
+        mkdir(ep.data_folder * ep.export_folder)
+        println("making dir ", ep.data_folder * ep.export_folder)
+    end
+
+    println(ep.pha_amp_com)
+
+    #if ep.pha_amp_com[1] == "_pha" && ep.pha_amp_com[2] == "_amp"
+    #TE_each_row(dataX, dataY, dataChar, ep, base_name_output_file * "_pha_amp")
+
+    #elseif ep.pha_amp_com[1] == "_pha" && ep.pha_amp_com[2] == "_pha"
+    #TE_each_row(dataX, dataX, dataChar, ep, base_name_output_file * "_pha_pha")
+
+    #elseif ep.pha_amp_com[1] == "_amp" && ep.pha_amp_com[2] == "_amp"
+    #    TE_each_row(dataY, dataY, dataChar, ep, base_name_output_file)
+    #end
 
 
-    print("chachacha  ", dataChar)
+    TE_data_rows_surrogates(base_name_output_file, dataChar, dataX, "_SePha", "-Pha", ep)
+
 end
 
 #MI_each_delay(dataX[1, :], dataY[1, :], output_name, τ_range, (0, 1))
