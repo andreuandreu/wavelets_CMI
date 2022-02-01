@@ -525,18 +525,26 @@ end
 
     println(ep.pha_amp_com)
 
-    #if ep.pha_amp_com[1] == "_pha" && ep.pha_amp_com[2] == "_amp"
-    #TE_each_row(dataX, dataY, dataChar, ep, base_name_output_file * "_pha_amp")
 
-    #elseif ep.pha_amp_com[1] == "_pha" && ep.pha_amp_com[2] == "_pha"
-    #TE_each_row(dataX, dataX, dataChar, ep, base_name_output_file * "_pha_pha")
+    if ep.pha_amp_com[1] == "_pha" && ep.pha_amp_com[2] == "_pha"
+        TE_each_row(dataX, dataX, dataChar, ep, base_name_output_file * "_pha_pha")
+        TE_data_rows_surrogates(base_name_output_file, dataChar, dataX, "_SePha", "-Pha", ep)
 
-    #elseif ep.pha_amp_com[1] == "_amp" && ep.pha_amp_com[2] == "_amp"
-    #    TE_each_row(dataY, dataY, dataChar, ep, base_name_output_file)
-    #end
+    elseif ep.pha_amp_com[1] == "_pha" && ep.pha_amp_com[2] == "_amp"
+        TE_each_row(dataX, dataY, dataChar, ep, base_name_output_file * "_pha_amp")
+        TE_data_rows_surrogates(base_name_output_file, dataChar, dataX, "_SePha", "-Amp", ep)
+    
+    elseif ep.pha_amp_com[1] == "_amp" && ep.pha_amp_com[2] == "_amp"
+        TE_each_row(dataY, dataY, dataChar, ep, base_name_output_file)
+        TE_data_rows_surrogates(base_name_output_file, dataChar, dataX, "_SeAmp", "-Amp", ep)
+    
+    elseif ep.pha_amp_com[1] == "_amp" && ep.pha_amp_com[2] == "_pha"
+        TE_each_row(dataY, dataY, dataChar, ep, base_name_output_file)
+        TE_data_rows_surrogates(base_name_output_file, dataChar, dataX, "_SeAmp", "-Pha", ep)
+    end
 
 
-    TE_data_rows_surrogates(base_name_output_file, dataChar, dataX, "_SePha", "-Pha", ep)
+    #TE_data_rows_surrogates(base_name_output_file, dataChar, dataX, "_SePha", "-Pha", ep)
 
 end
 

@@ -103,9 +103,8 @@ def niko_compute_wavelets(sig, frequencies, sampling_dt, kernel_name = 'morlet' 
         print('give me a good wavelet kernel name for niko, duh!!')
         exit()
     central_periods = 1./np.array(frequencies)
-    
-    scales = (central_periods )*(1.0/sampling_dt) / wavelet_kernel.fourier_factor(k0)#(
-        
+    scales = (central_periods)*(1.0/sampling_dt) / wavelet_kernel.fourier_factor(k0)#(
+
     waves = []
     wav_periods = []
     wav_scales = []

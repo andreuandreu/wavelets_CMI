@@ -190,48 +190,54 @@ def plot_comoludogram_simple(scales, matrix_TE, title, labs = ['pha', 'amp']):
     ax.grid()
 
 
+def matrixflip( m, d = 'h'):
+    myl = np.array(m)
+    if d=='v': 
+        return np.flip(myl, axis=0)
+    elif d=='h':
+        return np.flip(myl, axis=1)
 
-    
-#fig = plt.figure('name')
-#ax = plt.subplot(1, 1, 1) 
-#names = read_texts(sys.argv[1]) 
-#ax = plt.subplot(1, 1, 1) 
-#plot_subfigures(ax, names)
-# sys.argv[1]
+tag = 'ENSO'
+to_plot = ['pha', 'amp']
+wavelet = 'niko'
 
+if wavelet == 'niko':
+    '''niko'''
+    folder = './data/output/TE_ENSO_manuel_month_niko-p6-84mth/'
 
-#folder = './data/output/corr_TE_ENSO_manuel_month_niko-cmor1_amp-amp/'
-folder = './data/output/TE_ENSO_manuel_month_niko-p6-84mth/'
-#root_name = 'Prob-est_VisFreq_b150'  # sys.argv[2]
-root_name = 'Prob-est_VisFreq_b_bin-150_pha_pha_'#row-p6
-#root_name = 'Prob-est_VisFreq_b_bin-150_pha_amp_'
-surr_root = 'surr_circ_Prob-est_VisFreq_b_bin-150_SePha_Su-Pha_eDim-21111_'
-#surr_root = 'surr_circ_Prob-est_VisFreq_b_bin-150_SeAmp_Su-Amp_eDim-21111_'
-#surr_root = 'surr_circ_Prob-est_VisFreq_b_bin-150_amp_eDim-21111'
-#surr_root = 'surr_circ_Prob-est_VisFreq_b_bin-150_pha_eDim-21111'
-pha_or_amp = '_amp'
+if wavelet == 'pywt':
+    '''pywt'''
+    folder = './data/output/TE_ENSO_manuel_month_pywt-p6-84mth/'
 
+if to_plot[0] == 'pha' and to_plot[1] == 'pha':
+    '''pha-pha '''
+    root_name = 'Prob-est_VisFreq_b_bin-150_pha_pha_'
+    surr_root = 'surr_circ_Prob-est_VisFreq_b_bin-150_SePha_Su-Pha_eDim-21111_'
+
+if to_plot[0] == 'pha' and to_plot[1] == 'amp':
+    '''pha-amp '''
+    root_name = 'Prob-est_VisFreq_b_bin-150_pha_amp_'
+    surr_root = 'surr_circ_Prob-est_VisFreq_b_bin-150_SePha_Su-Amp_eDim-21111_'
+    labels = ['pha', 'pha']
+
+labels = to_plot
+title = 'CMI ' + tag + ' ' + labels[0] + '-' + labels[1]
 
 
 TEs_matrix = load_TransferEntropies(folder, root_name)
-Surr_data, surr_TE_matrix = load_surrogateEntropies(folder, surr_root)
-#subMat = subtract_matrices(surr_TE_matrix, TEs_matrix)
+surr_data, surr_TE_matrix = load_surrogateEntropies(folder, surr_root)
 
 subMat = TEs_matrix  - surr_TE_matrix
+
 step_period = 2 #months
 max_period = 85 #months
 min_period = 6 #months
 scales = (np.arange(min_period, max_period, step_period))
 
-#plot_comoludogram(scales, TEs_matrix, TEs_matrix)
-title = 'ENSO Pha-Pha CMI'
-#plot_comoludogram(scales, subMat, surr_TE_matrix)
-labs = ['pha', 'pha']
-#labs = ['pha', 'amp']
-plot_comoludogram_pixels(scales, subMat, title, labs)
+print('matrix shape', subMat.shape)
 
+plot_comoludogram_pixels(scales, matrixflip(subMat, 'v'), title, labels)
 
-plot_comoludogram_simple(scales, subMat, title, labs)
-#ax = fig.add_subplot(111)
+plot_comoludogram_simple(scales, subMat, title, labels)
 
 plt.show()

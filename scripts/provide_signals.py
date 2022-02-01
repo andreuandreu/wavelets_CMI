@@ -12,7 +12,7 @@ from scipy import io
 import random as rd
 import calendar
 from dateutil.parser import parse
-import surogates as su 
+
     
 def noise_signal(length_n):
     '''Create noise signals'''
@@ -85,26 +85,18 @@ def online_ENSO_34(dataset):
 
 def read_ENSO_rain_manuel_files(name):
     ''' read formated file'''
-    print('nananana',name)
-    #index, sig, dates = np.genfromtxt(name ,delimiter=',' ,
-    #       dtype="i4,f8,S10", names=['pos','dC_mon','DATE'],
-    #       skip_header=True, unpack=True, usecols=[0, 1, 2])
 
     data = pd.read_csv(name).T.values
     sig = data[1]
-    dates = data[2]
-    #sig = [item for sub_list in allsig for item in sub_list]
-    #t0 = 1870
-    #N = len(sig)
+    dates = data[2]   
     N = sig.shape[0]
     
     t0 = parse(dates[0], fuzzy=True).year
-    dt=1/12
+    dt=1.0#[month]/12
     time = np.arange(0, N) * dt + t0 
-    print('dates, from:', dates[0], 'to', dates[-1], 'in intervals of \n',  dates[1] )
+    #print(t0, 'dates, from:', dates[0], 'to', dates[-1], 'in intervals of',dt,' \n' )
     #t = np.arange(1871, 1871+len(sig)//12, 1/12. ) 
 
-    
     return  time, sig/np.mean(sig)-1
     
 
@@ -283,6 +275,9 @@ def plot_delayed_undelayed():
     ax[3].plot(t_freq[s:e], amp_to_phase_sig[s:e], c = 'r')
     ax[3].plot(t_freq[s:e], phas_to_amp_sig[s:e], c = 'b')
     plt.tight_layout()
+
+
+
 
 
 

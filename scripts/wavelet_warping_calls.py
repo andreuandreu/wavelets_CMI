@@ -144,7 +144,6 @@ if sig_tag == 'sin_signal':
     t = np.arange(600)
     t, sig = ps.create_signal(frequencies, amplitudes,
                               t, gauss=gauss, noise=noise)
-    #sampling_dt = 1
     
     t, sig = ps.get_ave_values(t, sig, 3)
 
@@ -169,7 +168,7 @@ freq_spectrum, fft1d = wc.FFT(t, sig)#fft(sig)/len(t)
 nyquist = int(len(fft1d))
 
 '''compute wavelet decomposition for 2 different methods'''
-wav_method = 'pywt'#'niko'#
+wav_method = 'niko'#'pywt'#
 
 if wav_method == 'pywt':
     kernel = 'cmor1.5-1.0'  # 'cmor'# #kind of wavelet kernel'gaussian'#
@@ -183,8 +182,8 @@ if wav_method == 'niko':
 
 
 '''satore/read the amplitude and phase of the waveleets in/from numpy files'''
-output_dir = data_output_dir + sig_tag + '_' + 'nSka_'+str(len(frequencies))+ '/'
-name_files = sig_tag + '_' + wav_method + '_' + kernel + '_' + str_periods
+output_dir = data_output_dir + sig_tag + '_' + wav_method + '_' + 'nSka_'+str(len(frequencies))+ '/'
+name_files = sig_tag +  '_' + kernel + '_' + str_periods
 
 if not os.path.exists(output_dir):
     os.makedirs(output_dir)
@@ -215,7 +214,7 @@ print('\n surr stored withthis path name', output_dir + surr_name + surr_ident, 
 
 
 '''plot signals and wavelets'''
-wp.plot_signal_phase_fft(t, sig, unit, freq_spectrum, frequencies, fft1d)
+#wp.plot_signal_phase_fft(t, sig, unit, freq_spectrum, frequencies, fft1d)
 wp.plot_scalogram_fft_signal_together(
     t, sig, freq_bands,  waves, unit, waveletname=kernel)
 
