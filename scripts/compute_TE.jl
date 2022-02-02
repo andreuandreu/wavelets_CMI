@@ -433,7 +433,7 @@ function TE_surrogate_set(surrogate_set, output_name, dataX, ep, serieChar)
         append!(entropies, TE)
     end
 
-    return mean(entropies)
+    return mean(entropies), std(entropies)
 
 end
 
@@ -449,11 +449,11 @@ function TE_all_surrogates(names_surrogates, output_name, dataSerie, serieChar, 
     open(name_out_file, "w") do file
         for n in names_surrogates
             surrogate_set = npzread(ep.data_folder * ep.input_folder * n)
-            one_mean = TE_surrogate_set(surrogate_set, output_name, dataSerie, ep, serieChar)
-
-            println("mmmmmmmm   ", n, "   ", one_mean)
+            one_mean, one_var = TE_surrogate_set(surrogate_set, output_name, dataSerie, ep, serieChar)
+        
+            println("mmmmmmmm   ", n, " ", one_mean, "+-", one_var)
             x = n[end-7:end-4]
-            write(file, "$x $serieChar $one_mean\n")
+            write(file, "$x $serieChar $one_mean $one_var\n")
         end
     end
 end

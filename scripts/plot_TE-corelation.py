@@ -1,6 +1,7 @@
 
 from __future__ import division
 from cProfile import label
+from turtle import color
 from scipy.io import FortranFile
 #from scipy.io import f90nml
 import numpy as np
@@ -84,14 +85,17 @@ def load_surrogateEntropies(folder, root_name):
     name_files = sorted( fnmatch.filter(os.listdir(folder), root_name+'*') )
     size = len(name_files)
 
-    TEs_matrix = np.empty(shape=(size, 3, size))
+    TEs_matrix = np.empty(shape=(size, 2, size))
     surr_TE_matrix = np.empty(shape=(size, size))
+    surr_sdTE_matrix = np.empty(shape=(size, size))
     for i, n in enumerate(name_files):
         #print(i, 'n', n)
-        TEs_matrix[i][:] = np.genfromtxt(folder+"/"+n, delimiter=' ',
-                                         dtype=("f8"), unpack=True, usecols=[2])
-        surr_TE_matrix[i][:] = TEs_matrix[i][2][:]
-    return TEs_matrix, surr_TE_matrix
+        TEs_matrix[i][:][:] = np.genfromtxt(folder+"/"+n, delimiter=' ',
+                                         dtype=("f8", "f8"), unpack=True, usecols=[2, 3])
+        surr_TE_matrix[i][:] = TEs_matrix[i][0][:]
+        surr_sdTE_matrix[i][:] = TEs_matrix[i][1][:]
+    
+    return surr_TE_matrix, surr_sdTE_matrix
 
 def subtract_matrices(matA, matB):
 
@@ -122,45 +126,7 @@ def format_axes(ax, title, labels):
 
     return ax
 
-def plot_comoludogram(scales, phasPhas_TE, phasAmp_matrix):
-    
-    fig = plt.figure(figsize=(6, 6))
 
-    xaxe, yaxe = np.meshgrid(scales, scales)
-
-    gs = gridspec.GridSpec(1, 1)
-    gs.update(left=0.05, right=0.95, hspace=0.3,
-                top=0.95, bottom=0.05, wspace=0.15)
-    axs = [gs[0, 0]]#, gs[0, 1]]
-    toplot = [phasPhas_TE.T]#, phasAmp_matrix.T]
-    #toplot = [phase_TE, phase_amp_TE]
-    tits = ['PHASE-PHASE CAUSALITY']#, 'PHASE-AMP CAUSALITY']
-    labs = ['PHASE', 'AMP']
-    max_mat = max(map(max, phasAmp_matrix))
-    for ax, cont, tit, lab in zip(axs, toplot, tits, labs):
-        print('ttttt', type(ax))
-        ax = plt.subplot(ax)
-        cs = ax.contourf(xaxe, yaxe, cont, levels=np.arange(
-            0.0, max_mat, 0.125), cmap=plt.cm.get_cmap("jet"), extend='max')
-        # cs = ax.contourf(x, y, cont, levels = np.arange(4, 20, 0.125), cmap = plt.cm.get_cmap("jet"), extend = 'max')
-        ax.tick_params(axis='both', which='major', labelsize=20)
-        ax.set_title(tit, size=30)
-
-        #ax = format_axes(ax, title, labs)
-        
-        if 'ENSO' in folder or 'rain' in folder:
-            ax.xaxis.set_major_locator(MultipleLocator(12))
-            ax.xaxis.set_major_formatter(
-                FuncFormatter(lambda x, pos: int(x)/12))
-            ax.xaxis.set_minor_locator(MultipleLocator(6))
-            ax.yaxis.set_major_locator(MultipleLocator(12))
-            ax.yaxis.set_major_formatter(
-                FuncFormatter(lambda x, pos: int(x)/12))
-            ax.yaxis.set_minor_locator(MultipleLocator(6))
-            ax.set_xlabel("PERIOD PHASE [years]", size=23)
-            plt.colorbar(cs)
-            ax.grid()
-            ax.set_ylabel("PERIOD %s [years]" % lab, size=23)
         
 def plot_comoludogram_pixels(scales, matrix_TE, title, labels = ['pha', 'amp']):
     
@@ -190,6 +156,59 @@ def plot_comoludogram_simple(scales, matrix_TE, title, labs = ['pha', 'amp']):
     ax.grid()
 
 
+def plot_projected_TE_vs_surr(scales, data_arr, data_var, surr_arr, surr_var ):
+
+    fig = plt.figure()
+    ax = fig.add_subplot(1, 1, 1)
+
+    ax.plot(scales, data_arr, color = 'r' )
+    ax.errorbar(scales, data_arr, yerr = data_var, color = 'r')
+
+    ax.plot(scales, surr_arr, color = '0.8' )
+    ax.errorbar(scales, surr_arr, yerr = surr_var, color = '0.8')
+
+
+
+def plot_projected_diff(scales, arr, var ):
+
+    fig = plt.figure()
+    ax = fig.add_subplot(1, 1, 1)
+    
+    ax.plot(scales, arr, color = 'r', alpha = 0.5 )
+    ax.errorbar(scales, arr, yerr = var, color = 'r', alpha = 0.5)
+
+
+
+
+def plot_data_sd(scales, dat_arrays, colors, labels ):
+
+    fig = plt.figure()
+    ax = fig.add_subplot(1, 1, 1)
+    
+    ax.axhline(y=0, color='black', linestyle='-')
+    ax.set_ylabel('TE-TEsurr')
+    ax.set_xlabel('period')
+    shift = [0, 0.2]
+
+    for e, c, l, s in zip(dat_arrays, colors, labels, shift):
+        ax.plot(scales+s, e[0], alpha = 0.5 , color = c, label = l)
+        ax.errorbar(scales+s, e[0], yerr =e[1], alpha = 0.5, color = c )
+    ax.legend(frameon = False)
+
+
+
+def projection(matrix):
+
+    values_array = np.empty(shape=(matrix.shape[0]))
+    std_array = np.empty(shape=(matrix.shape[0]))
+    for i, c in enumerate(matrix):
+         values_array[i] = np.mean(c)
+         std_array[i] = np.std(c)
+    
+    return values_array, std_array
+
+
+
 def matrixflip( m, d = 'h'):
     myl = np.array(m)
     if d=='v': 
@@ -198,7 +217,8 @@ def matrixflip( m, d = 'h'):
         return np.flip(myl, axis=1)
 
 tag = 'ENSO'
-to_plot = ['pha', 'amp']
+#to_plot = ['pha', 'amp']
+to_plot = ['pha', 'pha']
 wavelet = 'niko'
 
 if wavelet == 'niko':
@@ -225,19 +245,34 @@ title = 'CMI ' + tag + ' ' + labels[0] + '-' + labels[1]
 
 
 TEs_matrix = load_TransferEntropies(folder, root_name)
-surr_data, surr_TE_matrix = load_surrogateEntropies(folder, surr_root)
+surr_TE_matrix, surr_sdTE_matrix = load_surrogateEntropies(folder, surr_root)
 
 subMat = TEs_matrix  - surr_TE_matrix
+
+data_arr, data_var = projection(TEs_matrix)
+surr_arr, surr_var = projection(surr_TE_matrix)
+
+dif_arr, dif_var = projection(subMat.T)
+
 
 step_period = 2 #months
 max_period = 85 #months
 min_period = 6 #months
 scales = (np.arange(min_period, max_period, step_period))
 
-print('matrix shape', subMat.shape)
+#plot_comoludogram_pixels(scales, matrixflip(subMat, 'v'), title, labels)
 
-plot_comoludogram_pixels(scales, matrixflip(subMat, 'v'), title, labels)
+#plot_comoludogram_simple(scales, subMat, title, labels)
 
-plot_comoludogram_simple(scales, subMat, title, labels)
+#plot_projected_TE_vs_surr(scales, data_arr, data_var, surr_arr, surr_var )
+
+data_arrays = [projection(subMat), projection(subMat.T)]
+
+colors = ['r', 'b']
+labels = ['over x', 'over y']
+
+plot_projected_diff(scales, dif_arr, dif_var )
+plot_data_sd(scales, data_arrays, colors, labels )
+
 
 plt.show()
