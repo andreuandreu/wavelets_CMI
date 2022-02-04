@@ -204,7 +204,7 @@ function load_embedings_params(name_conf_file)
     in_data_tag = retrieve(conf, "names", "in_data_tag")
     sufixes_str = retrieve(conf, "names", "sufixes")
     pha_amp_com_str = retrieve(conf, "names", "pha_amp_com")
-
+    pha_amp_more_str = retrieve(conf, "names", "pha_amp_more")
 
     Bin = parse(Int64, retrieve(conf, "emb_par", "bins"))
     maxτ = parse(Int64, retrieve(conf, "emb_par", "max_tau"))
@@ -224,6 +224,11 @@ function load_embedings_params(name_conf_file)
         push!(pha_amp_com, e)
     end
 
+    pha_amp_more = []
+    for e in collect(pha_amp_more_str)
+        push!(pha_amp_more, e)
+    end
+
     emb_dim = []#(for e in collect(emb_dim_str) end)
     for e in collect(emb_dim_str)
         push!(emb_dim, parse(Int64, e))
@@ -241,7 +246,7 @@ function load_embedings_params(name_conf_file)
 
 
     emb_par = embedings_params(data_folder, input_folder, export_folder, in_data_tag,
-        sufixes, pha_amp_com, Bin, maxτ, jumpτ, emb_dim, phase_periods, name_tag, prob_est)
+        sufixes, pha_amp_com, pha_amp_more, Bin, maxτ, jumpτ, emb_dim, phase_periods, name_tag, prob_est)
 
     return emb_par
 
@@ -258,6 +263,7 @@ struct embedings_params
     in_data_tag::String
     sufixes::Vector
     pha_amp_com::Vector
+    pha_amp_more::Vector
     Bin::Int64
     maxτ::Int64
     jumpτ::Int64
@@ -391,8 +397,9 @@ function TE_each_row(dataX, dataY, dataChar, ep, base_name_output_file)
     "
 
     for (i, char) in enumerate(dataChar)
+        strChar = lpad(@sprintf("%.2i", char), 2, "0")
         name_output_file = ep.data_folder * ep.export_folder *
-                           base_name_output_file * "_row-p$(@sprintf("%.2i", char))" * ".txt"
+                           base_name_output_file * "_row-p" * strChar * ".txt"
 
         TE_each_column(dataX[i, :], dataY, name_output_file, ep, char)
         if i % 20 == 3
@@ -443,14 +450,16 @@ function TE_all_surrogates(names_surrogates, output_name, dataSerie, serieChar, 
     for each set of surrogates, compute the TE with a given data series and print it in a file
     "
     extra_name_emb = get_emb_dim_name(ep)
-    name_out_file = output_name * extra_name_emb * "_p$(@sprintf("%.2i", serieChar))" * ".txt"
-
+    strChar = lpad(@sprintf("%.2i", serieChar), 2, "0")
+    #name_out_file = output_name * extra_name_emb * "_p$(@sprintf("%.2i", serieChar))" * ".txt"
+    name_out_file = output_name * extra_name_emb * "_p" * strChar * ".txt"
+    println("NANANANA ", name_out_file)
 
     open(name_out_file, "w") do file
         for n in names_surrogates
             surrogate_set = npzread(ep.data_folder * ep.input_folder * n)
             one_mean, one_var = TE_surrogate_set(surrogate_set, output_name, dataSerie, ep, serieChar)
-        
+
             println("mmmmmmmm   ", n, " ", one_mean, "+-", one_var)
             x = n[end-7:end-4]
             write(file, "$x $serieChar $one_mean $one_var\n")
@@ -459,15 +468,15 @@ function TE_all_surrogates(names_surrogates, output_name, dataSerie, serieChar, 
 end
 
 
-function TE_data_rows_surrogates(base_name_output_file, dataChar, dataSeries, 
-        tagSeries, amp_or_phase_surr,  ep)
+function TE_data_rows_surrogates(base_name_output_file, dataChar, dataSeries,
+    tagSeries, amp_or_phase_surr, ep)
 
     "
     compute TE for each row of data for each set of surrogates with varing frequencies (periods)
     "
 
     surr_root = "surr_circ_"
-    
+
     #amp_or_phase_surr = "-pha"
 
     println("NIGHTMARE in ", ep.data_folder * ep.input_folder * surr_root * ep.in_data_tag)
@@ -478,8 +487,8 @@ function TE_data_rows_surrogates(base_name_output_file, dataChar, dataSeries,
 
     for (i, char) in enumerate(dataChar)
 
-        name_output_file = output_surr_root * tagSeries *"_Su"*amp_or_phase_surr
-        println("NANANANA ", name_output_file)
+        name_output_file = output_surr_root * tagSeries * "_Su" * amp_or_phase_surr
+        
 
         TE_all_surrogates(names_surrogates, name_output_file, dataSeries[i, :], char, ep)
 
@@ -507,6 +516,28 @@ function frequencies_names(path, key)
 end
 
 
+function what_to_correlate(pha_amp)
+
+    if pha_amp[1] == "_pha" && pha_amp[2] == "_pha"
+        TE_each_row(dataX, dataX, dataChar, ep, base_name_output_file * "_pha_pha")
+        TE_data_rows_surrogates(base_name_output_file, dataChar, dataX, "_SePha", "-Pha", ep)
+
+    elseif pha_amp[1] == "_pha" && pha_amp[2] == "_amp"
+        TE_each_row(dataX, dataY, dataChar, ep, base_name_output_file * "_pha_amp")
+        TE_data_rows_surrogates(base_name_output_file, dataChar, dataX, "_SePha", "-Amp", ep)
+
+    elseif pha_amp[1] == "_amp" && pha_amp[2] == "_amp"
+        TE_each_row(dataY, dataY, dataChar, ep, base_name_output_file)
+        TE_data_rows_surrogates(base_name_output_file, dataChar, dataX, "_SeAmp", "-Amp", ep)
+
+    elseif pha_amp[1] == "_amp" && pha_amp[2] == "_pha"
+        TE_each_row(dataY, dataY, dataChar, ep, base_name_output_file)
+        TE_data_rows_surrogates(base_name_output_file, dataChar, dataX, "_SeAmp", "-Pha", ep)
+    end
+
+
+end
+
 @time begin
 
     name_conf_file = ARGS[1]
@@ -524,24 +555,11 @@ end
     end
 
     println(ep.pha_amp_com)
+    what_to_correlate(ep.pha_amp_com)
 
+    println(ep.pha_amp_more)
+    what_to_correlate(ep.pha_amp_more)
 
-    if ep.pha_amp_com[1] == "_pha" && ep.pha_amp_com[2] == "_pha"
-        TE_each_row(dataX, dataX, dataChar, ep, base_name_output_file * "_pha_pha")
-        TE_data_rows_surrogates(base_name_output_file, dataChar, dataX, "_SePha", "-Pha", ep)
-
-    elseif ep.pha_amp_com[1] == "_pha" && ep.pha_amp_com[2] == "_amp"
-        TE_each_row(dataX, dataY, dataChar, ep, base_name_output_file * "_pha_amp")
-        TE_data_rows_surrogates(base_name_output_file, dataChar, dataX, "_SePha", "-Amp", ep)
-    
-    elseif ep.pha_amp_com[1] == "_amp" && ep.pha_amp_com[2] == "_amp"
-        TE_each_row(dataY, dataY, dataChar, ep, base_name_output_file)
-        TE_data_rows_surrogates(base_name_output_file, dataChar, dataX, "_SeAmp", "-Amp", ep)
-    
-    elseif ep.pha_amp_com[1] == "_amp" && ep.pha_amp_com[2] == "_pha"
-        TE_each_row(dataY, dataY, dataChar, ep, base_name_output_file)
-        TE_data_rows_surrogates(base_name_output_file, dataChar, dataX, "_SeAmp", "-Pha", ep)
-    end
 
 
     #TE_data_rows_surrogates(base_name_output_file, dataChar, dataX, "_SePha", "-Pha", ep)

@@ -3,10 +3,11 @@ import numpy as np
 import provide_signals as ps
 import wavelets_computation as wc
 import wavelets_ploting as wp
-import configparser
 import surogates as su
-import matplotlib.pyplot as plt
+import create_config  as cc
+#import matplotlib.pyplot as plt
 import os
+
 '''
 code that warps the functions necessary tu do a preliminary analysis of a guiven signal in 
 wavelets, save them in .npy files and plot them.
@@ -49,7 +50,11 @@ IMPORTANT the most significant things in this script are
 
 
 '''folder for data output'''
-data_output_dir = './data/output/'  # '../data/' in case you are in the scripts folder
+name_config_file = './confs/config_embeding_char.ini'
+original_config_file = './confs/template_conf_embeding_char.ini'
+wav_method = 'niko'#'pywt'#
+#wav_method = 'pywt'#'niko'#
+
 
 name_source = {
     'rain_india_manuel': './data/imput/s_allindiarain18712016.csv',
@@ -60,9 +65,9 @@ name_source = {
 }
 
 '''tag for the frequencies bands and signal'''
-#sig_tag = 'rossler_phase'
+sig_tag = 'rossler_phase'
 #sig_tag = 'rain_india_manuel'
-sig_tag = 'ENSO_manuel'
+#sig_tag = 'ENSO_manuel'
 #sig_tag = 'sin_signal'
 
 freq_tag = 'lin'
@@ -87,7 +92,7 @@ def freq_generation(freq_tag = 'lin', step_period = 1 , min_period =1 , max_peri
 
     elif freq_tag == 'lin':
 
-        step_period = 2 #months
+        step_period = 4 #months
         max_period = 85 #months
         min_period = 6 #months
         frequencies = 1./(np.arange(min_period, max_period, step_period))
@@ -168,7 +173,8 @@ freq_spectrum, fft1d = wc.FFT(t, sig)#fft(sig)/len(t)
 nyquist = int(len(fft1d))
 
 '''compute wavelet decomposition for 2 different methods'''
-wav_method = 'niko'#'pywt'#
+
+
 
 if wav_method == 'pywt':
     kernel = 'cmor1.5-1.0'  # 'cmor'# #kind of wavelet kernel'gaussian'#
@@ -181,32 +187,44 @@ if wav_method == 'niko':
         sampling_dt, kernel_name= kernel)
 
 
+conf_original = cc.load_config(original_config_file)
+
 '''satore/read the amplitude and phase of the waveleets in/from numpy files'''
-output_dir = data_output_dir + sig_tag + '_' + wav_method + '_' + 'nSka_'+str(len(frequencies))+ '/'
+output_data = conf_original['folders']['data_folder'] 
+output_dir = sig_tag + '_' + wav_method + '_' +\
+     'nSka_'+str(len(frequencies))+ '/'
 name_files = sig_tag +  '_' + kernel + '_' + str_periods
 
-if not os.path.exists(output_dir):
-    os.makedirs(output_dir)
+conf = cc.ini_conf_file(wav_method)
 
-wc.write_amplitude_phase_scale_wav(waves, 1.0 / frequencies, output_dir+name_files)
+conf['folders']['input_folder'] = output_dir
+conf['names']['in_data_tag'] = name_files
+
+cc.save_conf_file(name_config_file, conf)
+
+
+if not os.path.exists(output_data+output_dir):
+    os.makedirs(output_data+output_dir)
+
+wc.write_amplitude_phase_scale_wav(waves, 1.0 / frequencies, output_data+output_dir+name_files)
 #amplitude, phase = wc.read_wavelets(name_files_pywt)
 
-print(' \n saving amplitude ', output_dir+name_files + '_amp.npy')
-print(' saving phase in ', output_dir+name_files + '_pha.npy')
-print(' saving phase in ', output_dir+name_files + '_ska.npy\n')
+print(' \n saving amplitude ', output_data+output_dir+name_files + '_amp.npy')
+print(' saving phase in ', output_data+output_dir+name_files + '_pha.npy')
+print(' saving phase in ', output_data+output_dir+name_files + '_ska.npy\n')
 
 
 '''call to create surrogates'''
-n_surrogates = 111
+n_surrogates = 66
 
 for w, f  in zip(waves, freq_bands):
     surr_name = 'surr_circ_' + name_files
     #ident = 'f' + '{:04d}'.format(int(10000*f))
     surr_ident = '_p' + '{:04d}'.format(int(1/f))
-    su.many_surrogates( output_dir + surr_name + surr_ident,  w,
+    su.many_surrogates( output_data+output_dir + surr_name + surr_ident,  w,
                        min_shift=30, n_surrogates=n_surrogates)
     
-print('\n surr stored withthis path name', output_dir + surr_name + surr_ident, '\n')
+print('\n surr stored withthis path name', output_data+ output_dir + surr_name + surr_ident, '\n')
 
 
 '''reconstruct the signal form the wavelets'''

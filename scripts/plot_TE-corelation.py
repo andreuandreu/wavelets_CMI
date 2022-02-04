@@ -1,6 +1,7 @@
 
 from __future__ import division
 from cProfile import label
+from logging import exception
 from turtle import color
 from scipy.io import FortranFile
 #from scipy.io import f90nml
@@ -15,6 +16,7 @@ import matplotlib.ticker as ticker
 from matplotlib.ticker import MultipleLocator, FuncFormatter
 import matplotlib.gridspec as gridspec
 import fnmatch
+import create_config as cc
 
 #131072 samples of the first components of the coupled Roessler systems, for 100 different epsilons from 0 to almost 0.25.
 #from zero eps to its maximum
@@ -65,9 +67,9 @@ def plot_subfigures(ax, names):
     ax.legend()
         #ax.legend(frameon=False, fontsize = 10 , loc = 'lower left')
 
-def load_TransferEntropies(folder, root_name):
+def load_TransferEntropies(folder, data_root):
 
-    name_files = sorted(fnmatch.filter(os.listdir(folder), root_name+'*') )
+    name_files = sorted(fnmatch.filter(os.listdir(folder), data_root+'*') )
 
     size = len(name_files) 
     TEs_matrix = np.empty( shape=(size, size))
@@ -80,10 +82,17 @@ def load_TransferEntropies(folder, root_name):
     return TEs_matrix
 
 
-def load_surrogateEntropies(folder, root_name):
+def load_surrogateEntropies(folder, data_root):
 
-    name_files = sorted( fnmatch.filter(os.listdir(folder), root_name+'*') )
+    name_files = sorted( fnmatch.filter(os.listdir(folder), data_root+'*') )
+
     size = len(name_files)
+
+    if size < 1:
+        print(folder+data_root)
+        print('ERRROR, bad path to names')
+        raise SystemExit
+        
 
     TEs_matrix = np.empty(shape=(size, 2, size))
     surr_TE_matrix = np.empty(shape=(size, size))
@@ -188,7 +197,7 @@ def plot_data_sd(scales, dat_arrays, colors, labels ):
     ax.axhline(y=0, color='black', linestyle='-')
     ax.set_ylabel('TE-TEsurr')
     ax.set_xlabel('period')
-    shift = [0, 0.2]
+    shift = [0, 0.4]
 
     for e, c, l, s in zip(dat_arrays, colors, labels, shift):
         ax.plot(scales+s, e[0], alpha = 0.5 , color = c, label = l)
@@ -216,35 +225,36 @@ def matrixflip( m, d = 'h'):
     elif d=='h':
         return np.flip(myl, axis=1)
 
+
+
 tag = 'ENSO'
-#to_plot = ['pha', 'amp']
-to_plot = ['pha', 'pha']
-wavelet = 'niko'
+to_plot = ['pha', 'amp']
+#to_plot = ['pha', 'pha']
+#wavelet = 'niko'
 
-if wavelet == 'niko':
-    '''niko'''
-    folder = './data/output/TE_ENSO_manuel_month_niko-p6-84mth/'
+name_config_file = './confs/config_embeding_char.ini'
+conf = cc.load_config(name_config_file )
+folder = conf['folders']['data_folder']+ conf['folders']['export_folder'] 
+root_name =  conf['prob_est']['name_tag']+"_bin-" +  conf['emb_par']['bins']
 
-if wavelet == 'pywt':
-    '''pywt'''
-    folder = './data/output/TE_ENSO_manuel_month_pywt-p6-84mth/'
 
 if to_plot[0] == 'pha' and to_plot[1] == 'pha':
     '''pha-pha '''
-    root_name = 'Prob-est_VisFreq_b_bin-150_pha_pha_'
-    surr_root = 'surr_circ_Prob-est_VisFreq_b_bin-150_SePha_Su-Pha_eDim-21111_'
+    data_root = root_name + '_pha_pha_row-'
+    surr_root = 'surr_circ_' + root_name + '_SePha_Su-Pha_eDim-21111_'
+    labels = ['pha', 'pha']
 
 if to_plot[0] == 'pha' and to_plot[1] == 'amp':
     '''pha-amp '''
-    root_name = 'Prob-est_VisFreq_b_bin-150_pha_amp_'
-    surr_root = 'surr_circ_Prob-est_VisFreq_b_bin-150_SePha_Su-Amp_eDim-21111_'
-    labels = ['pha', 'pha']
+    data_root = root_name + '_pha_amp_row-'
+    surr_root = 'surr_circ_' + root_name + '_SePha_Su-Amp_eDim-21111_'
+    labels = ['pha', 'amp']
 
 labels = to_plot
-title = 'CMI ' + tag + ' ' + labels[0] + '-' + labels[1]
+title = 'CMI ' + conf['names']['in_data_tag'][0:4] + ' ' + labels[0] + '-' + labels[1]
 
 
-TEs_matrix = load_TransferEntropies(folder, root_name)
+TEs_matrix = load_TransferEntropies(folder, data_root)
 surr_TE_matrix, surr_sdTE_matrix = load_surrogateEntropies(folder, surr_root)
 
 subMat = TEs_matrix  - surr_TE_matrix
@@ -260,9 +270,9 @@ max_period = 85 #months
 min_period = 6 #months
 scales = (np.arange(min_period, max_period, step_period))
 
-#plot_comoludogram_pixels(scales, matrixflip(subMat, 'v'), title, labels)
+plot_comoludogram_pixels(scales, matrixflip(subMat, 'v'), title, labels)
 
-#plot_comoludogram_simple(scales, subMat, title, labels)
+plot_comoludogram_simple(scales, subMat, title, labels)
 
 #plot_projected_TE_vs_surr(scales, data_arr, data_var, surr_arr, surr_var )
 
@@ -271,7 +281,7 @@ data_arrays = [projection(subMat), projection(subMat.T)]
 colors = ['r', 'b']
 labels = ['over x', 'over y']
 
-plot_projected_diff(scales, dif_arr, dif_var )
+#plot_projected_diff(scales, dif_arr, dif_var )
 plot_data_sd(scales, data_arrays, colors, labels )
 
 
