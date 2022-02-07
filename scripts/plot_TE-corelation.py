@@ -237,6 +237,30 @@ def matrixflip( m, d = 'h'):
 
 
 
+def sigma_subtract(TEmat, surMat, sigmaMat):
+
+    significantMat = np.zeros(np.shape(TEmat))
+
+    zeros = np.where(sigmaMat == 0)
+    sigmaMat[zeros] = np.ones(np.shape(TEmat))[zeros]
+
+    #print ("TE", TEmat )
+    #print ("surr", surMat)
+    #print ("sigma", sigmaMat)
+
+    more = np.where(TEmat >= surMat + sigmaMat )
+    less = np.where(TEmat <= surMat + sigmaMat)
+
+    significantMat[more] = (abs(TEmat[more]) - abs(surMat[more]) )/ sigmaMat[more] 
+
+
+    #print ("sigma", significantMat)
+
+
+    return significantMat
+
+
+
 tag = 'sin'
 #to_plot = ['pha', 'amp']
 to_plot = ['pha', 'pha']
@@ -270,13 +294,16 @@ TEs_matrix = load_TransferEntropies(folder_TEdata, data_root)
 folder_surrogates = folder + "Su-"+conf['surrogates']['surr_kind'] + "_files/"
 surr_TE_matrix, surr_sdTE_matrix = load_surrogateEntropies(folder_surrogates, surr_root)
 
+signif_matrix1sd = sigma_subtract(TEs_matrix, surr_TE_matrix, surr_sdTE_matrix )
+
 subMat = TEs_matrix  - surr_TE_matrix
 
 data_arr, data_var = projection(TEs_matrix)
 surr_arr, surr_var = projection(surr_TE_matrix)
 
-dif_arr, dif_var = projection(subMat.T)
 
+
+dif_arr, dif_var = projection(subMat.T)
 
 
 max_period = 85 #months
@@ -288,6 +315,9 @@ scales = (np.arange(min_period, max_period, step_period))
 plot_comoludogram_pixels(scales, matrixflip(subMat, 'v'), title, labels)
 
 plot_comoludogram_simple(scales, subMat, title, labels)
+
+plot_comoludogram_simple(scales, signif_matrix1sd, title+" significance 1sd")
+plot_comoludogram_pixels(scales, matrixflip(signif_matrix1sd, 'v'), title+" significance 1sd", labels)
 
 #plot_projected_TE_vs_surr(scales, data_arr, data_var, surr_arr, surr_var )
 

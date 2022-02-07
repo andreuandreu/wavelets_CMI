@@ -512,6 +512,19 @@ function TE_data_rows_surrogates(base_name_output_file, dataChar, dataSeries,
 
 end
 
+function TE_binary_percentil(TEmatrix, SurrMats)
+
+    for m in SurrMats
+    
+        diff = TEmatrix - m
+        diff[:, findall(diff .> 0)] .= 1
+    
+        ifelse.(m .> SurrMats, a, m .= 1)
+        ifelse.(m .< SurrMats, a, m .= 0)
+
+        mSum = mSum .+ m
+    
+    end
 
 
 
