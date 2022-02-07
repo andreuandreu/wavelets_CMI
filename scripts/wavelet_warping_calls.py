@@ -7,6 +7,7 @@ import surogates as su
 import create_config  as cc
 #import matplotlib.pyplot as plt
 import os
+import subprocess
 
 '''
 code that warps the functions necessary tu do a preliminary analysis of a guiven signal in 
@@ -65,10 +66,10 @@ name_source = {
 }
 
 '''tag for the frequencies bands and signal'''
-sig_tag = 'rossler_phase'
+#sig_tag = 'rossler_phase'
 #sig_tag = 'rain_india_manuel'
 #sig_tag = 'ENSO_manuel'
-#sig_tag = 'sin_signal'
+sig_tag = 'sin_signal'
 
 freq_tag = 'lin'
 #freq_tag = 'seed'
@@ -92,7 +93,7 @@ def freq_generation(freq_tag = 'lin', step_period = 1 , min_period =1 , max_peri
 
     elif freq_tag == 'lin':
 
-        step_period = 4 #months
+        step_period = 7 #months
         max_period = 85 #months
         min_period = 6 #months
         frequencies = 1./(np.arange(min_period, max_period, step_period))
@@ -121,7 +122,7 @@ print ('ffff', frequencies[1:3], frequencies[-1], 'pppppp', 1/frequencies[1:3], 
 '''depending on the the tag, load a signal and create time array'''
 if sig_tag == 'rossler_phase':
     t, sig = ps.rossler_phase(name_source[sig_tag])
-    unit = 'unit'
+    unit = 'Hz'
 
 if sig_tag == 'ENSO_online':
     t, sig = ps.online_ENSO_34()
@@ -191,14 +192,16 @@ conf_original = cc.load_config(original_config_file)
 
 '''satore/read the amplitude and phase of the waveleets in/from numpy files'''
 output_data = conf_original['folders']['data_folder'] 
-output_dir = sig_tag + '_' + wav_method + '_' +\
-     'nSka_'+str(len(frequencies))+ '/'
+number_scales = 'nSka_'+str(len(frequencies))
+output_dir = sig_tag + '_' + wav_method + '_' + number_scales + '/'
 name_files = sig_tag +  '_' + kernel + '_' + str_periods
 
 conf = cc.ini_conf_file(wav_method)
 
 conf['folders']['input_folder'] = output_dir
 conf['names']['in_data_tag'] = name_files
+conf['folders']['export_folder'] = 'TE_' + sig_tag + "_"  + wav_method +\
+    '_' +number_scales +  "_" +str_periods + '/'
 
 cc.save_conf_file(name_config_file, conf)
 
@@ -215,10 +218,10 @@ print(' saving phase in ', output_data+output_dir+name_files + '_ska.npy\n')
 
 
 '''call to create surrogates'''
-n_surrogates = 66
+n_surrogates = 11
 
 for w, f  in zip(waves, freq_bands):
-    surr_name = 'surr_circ_' + name_files
+    surr_name = 'surr_circ_' + name_files 
     #ident = 'f' + '{:04d}'.format(int(10000*f))
     surr_ident = '_p' + '{:04d}'.format(int(1/f))
     su.many_surrogates( output_data+output_dir + surr_name + surr_ident,  w,
@@ -228,13 +231,19 @@ print('\n surr stored withthis path name', output_data+ output_dir + surr_name +
 
 
 '''reconstruct the signal form the wavelets'''
-#rec_signal_niko = wc.wav_reconstructed_signal(sig, waves, no_amp=False, individual_amp=True)
+rec_signal_niko = wc.wav_reconstructed_signal(sig, waves, no_amp=False, individual_amp=True)
 
 
 '''plot signals and wavelets'''
 #wp.plot_signal_phase_fft(t, sig, unit, freq_spectrum, frequencies, fft1d)
 wp.plot_scalogram_fft_signal_together(
     t, sig, freq_bands,  waves, unit, waveletname=kernel)
+
+'''
+bashCommand = "julia --project=. ./scripts/compute_TE.jl ./confs/config_embeding_char.ini"
+process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
+output, error = process.communicate()
+'''
 
 
 #wp.plot_scalogram_fft_signal_together(
@@ -245,7 +254,7 @@ wp.plot_scalogram_fft_signal_together(
 #ax = wp.provide_axis()
 #wp.plot_wavelet_scalogram(ax, t, freq_bands_niko, waves_niko, unit, waveletname = kernel_niko  )
 #wp.plot_waves_amplitude_phase_WL('python wavelet', sig, rec_signal_pywt, waves_pywt, freq_bands_pywt )
-#wp.plot_waves_amplitude_phase_WL('niko wavelet', sig, rec_signal_niko, waves_niko, freq_bands_niko)
+wp.plot_waves_amplitude_phase_WL(sig_tag, sig, rec_signal_niko, waves, frequencies)
 #wp.plot_comparison_methods(waves_pywt[0], waves_niko[0], sig, rec_signal_pywt, rec_signal_niko)
 wp.plot_all()
 

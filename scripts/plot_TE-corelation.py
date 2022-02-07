@@ -69,17 +69,24 @@ def plot_subfigures(ax, names):
 
 def load_TransferEntropies(folder, data_root):
 
-    name_files = sorted(fnmatch.filter(os.listdir(folder), data_root+'*') )
+    
 
+    name_files = sorted(fnmatch.filter(os.listdir(folder), data_root+'*') )
+    
+
+    print(name_files)
     size = len(name_files) 
     TEs_matrix = np.empty( shape=(size, size))
     for i, n in enumerate(name_files):
-        #print('namTEma', i, n)
+        print('namTEma', i, n)
         TEs_matrix[i][:] = np.genfromtxt(folder+n, delimiter=' ',
                                    dtype=("f8"), unpack=True, usecols=[1])
         
 
     return TEs_matrix
+
+
+    
 
 
 def load_surrogateEntropies(folder, data_root):
@@ -89,7 +96,7 @@ def load_surrogateEntropies(folder, data_root):
     size = len(name_files)
 
     if size < 1:
-        print(folder+data_root)
+        print('nothing here ', folder+data_root)
         print('ERRROR, bad path to names')
         raise SystemExit
         
@@ -97,12 +104,15 @@ def load_surrogateEntropies(folder, data_root):
     TEs_matrix = np.empty(shape=(size, 2, size))
     surr_TE_matrix = np.empty(shape=(size, size))
     surr_sdTE_matrix = np.empty(shape=(size, size))
+    all_surr = np.array([])
     for i, n in enumerate(name_files):
-        #print(i, 'n', n)
+        print(i, 'n', n)
         TEs_matrix[i][:][:] = np.genfromtxt(folder+"/"+n, delimiter=' ',
                                          dtype=("f8", "f8"), unpack=True, usecols=[2, 3])
         surr_TE_matrix[i][:] = TEs_matrix[i][0][:]
         surr_sdTE_matrix[i][:] = TEs_matrix[i][1][:]
+
+        np.append( all_surr, np.load(folder + "set-" + n[:-4] + '.npy' ))
     
     return surr_TE_matrix, surr_sdTE_matrix
 
@@ -227,11 +237,12 @@ def matrixflip( m, d = 'h'):
 
 
 
-tag = 'ENSO'
-to_plot = ['pha', 'amp']
-#to_plot = ['pha', 'pha']
+tag = 'sin'
+#to_plot = ['pha', 'amp']
+to_plot = ['pha', 'pha']
 #wavelet = 'niko'
 
+#name_config_file = './confs/config_embeding_char_ENSO_pywt.ini'
 name_config_file = './confs/config_embeding_char.ini'
 conf = cc.load_config(name_config_file )
 folder = conf['folders']['data_folder']+ conf['folders']['export_folder'] 
@@ -241,21 +252,23 @@ root_name =  conf['prob_est']['name_tag']+"_bin-" +  conf['emb_par']['bins']
 if to_plot[0] == 'pha' and to_plot[1] == 'pha':
     '''pha-pha '''
     data_root = root_name + '_pha_pha_row-'
-    surr_root = 'surr_circ_' + root_name + '_SePha_Su-Pha_eDim-21111_'
+    surr_root = root_name + '_SePha_Su-Pha_eDim-21111_'
     labels = ['pha', 'pha']
 
 if to_plot[0] == 'pha' and to_plot[1] == 'amp':
     '''pha-amp '''
     data_root = root_name + '_pha_amp_row-'
-    surr_root = 'surr_circ_' + root_name + '_SePha_Su-Amp_eDim-21111_'
+    surr_root = root_name + '_SePha_Su-Amp_eDim-21111_'
     labels = ['pha', 'amp']
 
 labels = to_plot
 title = 'CMI ' + conf['names']['in_data_tag'][0:4] + ' ' + labels[0] + '-' + labels[1]
 
+folder_TEdata = folder + "Dat_files/"
+TEs_matrix = load_TransferEntropies(folder_TEdata, data_root)
 
-TEs_matrix = load_TransferEntropies(folder, data_root)
-surr_TE_matrix, surr_sdTE_matrix = load_surrogateEntropies(folder, surr_root)
+folder_surrogates = folder + "Su-"+conf['surrogates']['surr_kind'] + "_files/"
+surr_TE_matrix, surr_sdTE_matrix = load_surrogateEntropies(folder_surrogates, surr_root)
 
 subMat = TEs_matrix  - surr_TE_matrix
 
@@ -265,9 +278,11 @@ surr_arr, surr_var = projection(surr_TE_matrix)
 dif_arr, dif_var = projection(subMat.T)
 
 
-step_period = 2 #months
+
 max_period = 85 #months
 min_period = 6 #months
+
+step_period = int( (max_period - min_period) / np.shape(subMat)[0] + 0.5 )
 scales = (np.arange(min_period, max_period, step_period))
 
 plot_comoludogram_pixels(scales, matrixflip(subMat, 'v'), title, labels)

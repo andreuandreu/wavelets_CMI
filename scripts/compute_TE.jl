@@ -215,6 +215,8 @@ function load_embedings_params(name_conf_file)
     name_tag = retrieve(conf, "prob_est", "name_tag")
     prob_est = retrieve(conf, "prob_est", "prob_kind")
 
+    surr_kind = retrieve(conf, "surrogates", "surr_kind")
+
     sufixes = []#Array{String}(undef, 3, 1)
     for s in collect(sufixes_str)
         push!(sufixes, s)
@@ -246,7 +248,8 @@ function load_embedings_params(name_conf_file)
 
 
     emb_par = embedings_params(data_folder, input_folder, export_folder, in_data_tag,
-        sufixes, pha_amp_com, pha_amp_more, Bin, maxτ, jumpτ, emb_dim, phase_periods, name_tag, prob_est)
+        sufixes, pha_amp_com, pha_amp_more, Bin, maxτ, jumpτ, emb_dim, phase_periods,
+        name_tag, prob_est, surr_kind)
 
     return emb_par
 
@@ -271,6 +274,7 @@ struct embedings_params
     period_range::Vector
     name_tag::String
     prob_est::String
+    surr_kind::String
 
 end
 
@@ -396,10 +400,12 @@ function TE_each_row(dataX, dataY, dataChar, ep, base_name_output_file)
     compute TE for each row of data (the x one) in one of the two data files compared to the other
     "
 
+    TEdata_folder = ep.data_folder * ep.export_folder * "Dat_files/"
+    make_dir_if_not_exist(TEdata_folder)
+
     for (i, char) in enumerate(dataChar)
         strChar = lpad(@sprintf("%.2i", char), 2, "0")
-        name_output_file = ep.data_folder * ep.export_folder *
-                           base_name_output_file * "_row-p" * strChar * ".txt"
+        name_output_file = TEdata_folder * base_name_output_file * "_row-p" * strChar * ".txt"
 
         TE_each_column(dataX[i, :], dataY, name_output_file, ep, char)
         if i % 20 == 3
@@ -413,10 +419,9 @@ end
 
 
 
-
 "compute stuff with surrogates"
 
-function TE_surrogate_set(surrogate_set, output_name, dataX, ep, serieChar)
+function TE_surrogate_set(surrogate_set, surr_folder, output_name, dataX, ep, serieChar)
 
     "compute the TE of a guiven time series with a guiven set of surrogates, 
     measure the mean and store it given a pattern of x y names or characteristics"
@@ -440,11 +445,14 @@ function TE_surrogate_set(surrogate_set, output_name, dataX, ep, serieChar)
         append!(entropies, TE)
     end
 
+    name_surr_arrays = surr_folder * "set-" * output_name[1:end-4] * ".npy"
+    npzwrite(name_surr_arrays, entropies)
+
     return mean(entropies), std(entropies)
 
 end
 
-function TE_all_surrogates(names_surrogates, output_name, dataSerie, serieChar, ep)
+function TE_all_surrogates(names_surrogates, surr_folder, output_name, dataSerie, serieChar, ep)
     #τ_range, τ_delays, emb_dim, estimator
     "
     for each set of surrogates, compute the TE with a given data series and print it in a file
@@ -453,14 +461,20 @@ function TE_all_surrogates(names_surrogates, output_name, dataSerie, serieChar, 
     strChar = lpad(@sprintf("%.2i", serieChar), 2, "0")
     #name_out_file = output_name * extra_name_emb * "_p$(@sprintf("%.2i", serieChar))" * ".txt"
     name_out_file = output_name * extra_name_emb * "_p" * strChar * ".txt"
-    println("NANANANA ", name_out_file)
 
-    open(name_out_file, "w") do file
-        for n in names_surrogates
+
+    println("\n NANANANA ",  name_out_file)
+
+    open( surr_folder * name_out_file, "w") do file
+        for (i, n) in enumerate( names_surrogates)
             surrogate_set = npzread(ep.data_folder * ep.input_folder * n)
-            one_mean, one_var = TE_surrogate_set(surrogate_set, output_name, dataSerie, ep, serieChar)
+            one_mean, one_var = TE_surrogate_set(surrogate_set, surr_folder, name_out_file,
+                dataSerie, ep, serieChar)
 
-            println("mmmmmmmm   ", n, " ", one_mean, "+-", one_var)
+            if i % length(names_surrogates)/2 == 1
+                println("mmmmmmmm   ", n, " ", one_mean, "+-", one_var)
+            end
+        
             x = n[end-7:end-4]
             write(file, "$x $serieChar $one_mean $one_var\n")
         end
@@ -482,15 +496,16 @@ function TE_data_rows_surrogates(base_name_output_file, dataChar, dataSeries,
     println("NIGHTMARE in ", ep.data_folder * ep.input_folder * surr_root * ep.in_data_tag)
     names_surrogates = frequencies_names(ep.data_folder * ep.input_folder, surr_root * ep.in_data_tag)
 
-    output_surr_root = ep.data_folder * ep.export_folder * surr_root * base_name_output_file
-    println("NIGHTMARE out ", output_surr_root)
+    surr_folder = ep.data_folder * ep.export_folder * "Su-" * ep.surr_kind * "_files/"
+    make_dir_if_not_exist(surr_folder)
+
+    name_output_file = base_name_output_file * tagSeries * "_Su" * amp_or_phase_surr
+    println("NIGHTMARE out ", name_output_file)
 
     for (i, char) in enumerate(dataChar)
 
-        name_output_file = output_surr_root * tagSeries * "_Su" * amp_or_phase_surr
-        
 
-        TE_all_surrogates(names_surrogates, name_output_file, dataSeries[i, :], char, ep)
+        TE_all_surrogates(names_surrogates, surr_folder, name_output_file, dataSeries[i, :], char, ep)
 
     end
 
@@ -538,6 +553,20 @@ function what_to_correlate(pha_amp)
 
 end
 
+function make_dir_if_not_exist(name_dir)
+    if isdir(name_dir)
+        println("BE AWARE folder already exixts!!! \n")
+    else
+        mkdir(name_dir)
+        println("making dir ", name_dir)
+    end
+end
+
+
+
+
+
+
 @time begin
 
     name_conf_file = ARGS[1]
@@ -547,18 +576,13 @@ end
 
     dataX, dataY, dataChar = load_npy_data(ep)
 
-    if isdir(ep.data_folder * ep.export_folder)
-        println("BE AWARE folder already exixts!!! \n")
-    else
-        mkdir(ep.data_folder * ep.export_folder)
-        println("making dir ", ep.data_folder * ep.export_folder)
-    end
+    make_dir_if_not_exist(ep.data_folder * ep.export_folder)
 
     println(ep.pha_amp_com)
     what_to_correlate(ep.pha_amp_com)
 
-    println(ep.pha_amp_more)
-    what_to_correlate(ep.pha_amp_more)
+    #println(ep.pha_amp_more)
+    #what_to_correlate(ep.pha_amp_more)
 
 
 
