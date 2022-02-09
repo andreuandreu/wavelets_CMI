@@ -525,7 +525,7 @@ function TE_binary_percentil(TEmatrix, SurrMats)
         mSum = mSum .+ m
     
     end
-
+end
 
 
 function frequencies_names(path, key)

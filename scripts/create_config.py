@@ -61,6 +61,13 @@ def ini_conf_file(wavelet):
     config_file.set("prob_est", "name_tag", "Prob-est_VisFreq_b" )
     config_file.set("prob_est", "prob_kind", "VisFreq" )
 
+    ###ADD SECTION###
+    config_file.add_section("surrogates")
+
+    # section settings
+    config_file.set("surrogates", "surr_kind", "circular" )
+    config_file.set("surrogates", "surr_num", "11" )
+
     return config_file
 
 def save_conf_file(name, config):

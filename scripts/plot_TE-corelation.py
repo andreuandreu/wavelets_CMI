@@ -226,6 +226,19 @@ def projection(matrix):
     
     return values_array, std_array
 
+def plot_array_vs_surr(data_arr, surr_arr, surr_var):
+
+    fig = plt.figure()
+    ax = fig.add_subplot(1, 1, 1)
+
+    ax.plot(scales, data_arr, color = 'r' )
+
+    ax.plot(scales, surr_arr, color = '0.8' )
+    ax.errorbar(scales, surr_arr, yerr = surr_var, color = '0.8')
+
+
+
+
 
 
 def matrixflip( m, d = 'h'):
@@ -251,7 +264,7 @@ def sigma_subtract(TEmat, surMat, sigmaMat):
     more = np.where(TEmat >= surMat + sigmaMat )
     less = np.where(TEmat <= surMat + sigmaMat)
 
-    significantMat[more] = (abs(TEmat[more]) - abs(surMat[more]) )/ sigmaMat[more] 
+    significantMat[more] = (abs(TEmat[more] -surMat[more] ) )/ sigmaMat[more] 
 
 
     #print ("sigma", significantMat)
@@ -267,6 +280,7 @@ to_plot = ['pha', 'pha']
 #wavelet = 'niko'
 
 #name_config_file = './confs/config_embeding_char_ENSO_pywt.ini'
+#name_config_file = './confs/config_embeding_char_ENSO_niko.ini'
 name_config_file = './confs/config_embeding_char.ini'
 conf = cc.load_config(name_config_file )
 folder = conf['folders']['data_folder']+ conf['folders']['export_folder'] 
@@ -328,6 +342,9 @@ labels = ['over x', 'over y']
 
 #plot_projected_diff(scales, dif_arr, dif_var )
 plot_data_sd(scales, data_arrays, colors, labels )
+
+index = 19#int(np.shape(TEs_matrix)[1]/2)
+plot_array_vs_surr(TEs_matrix[index], surr_TE_matrix[index], surr_sdTE_matrix[index])
 
 
 plt.show()

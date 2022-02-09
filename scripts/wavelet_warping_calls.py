@@ -66,10 +66,10 @@ name_source = {
 }
 
 '''tag for the frequencies bands and signal'''
-#sig_tag = 'rossler_phase'
+sig_tag = 'rossler_phase'
 #sig_tag = 'rain_india_manuel'
 #sig_tag = 'ENSO_manuel'
-sig_tag = 'sin_signal'
+#sig_tag = 'sin_signal'
 
 freq_tag = 'lin'
 #freq_tag = 'seed'
@@ -93,7 +93,7 @@ def freq_generation(freq_tag = 'lin', step_period = 1 , min_period =1 , max_peri
 
     elif freq_tag == 'lin':
 
-        step_period = 7 #months
+        step_period = 4 #months
         max_period = 85 #months
         min_period = 6 #months
         frequencies = 1./(np.arange(min_period, max_period, step_period))
@@ -239,11 +239,11 @@ rec_signal_niko = wc.wav_reconstructed_signal(sig, waves, no_amp=False, individu
 wp.plot_scalogram_fft_signal_together(
     t, sig, freq_bands,  waves, unit, waveletname=kernel)
 
-'''
+
 bashCommand = "julia --project=. ./scripts/compute_TE.jl ./confs/config_embeding_char.ini"
 process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
 output, error = process.communicate()
-'''
+
 
 
 #wp.plot_scalogram_fft_signal_together(
