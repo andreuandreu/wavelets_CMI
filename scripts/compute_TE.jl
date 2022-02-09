@@ -293,6 +293,51 @@ function write_entropies_tau(name, entropies)
 
 end
 
+function MI_each_column(dataX, dataY, file_name, ep, serieChar)
+
+    "
+    compute MI 
+    "
+    estimator, τ_range, τ_delays, emb_dim = inizilaize_embedings(ep, serieChar)
+    ts = (0, 0)
+    emb_dim = (1, 2)
+    println("oooaooo", file_name)
+    open(file_name, "w") do file
+        for i = 1:size(dataY, 1)
+            #mi_12 = get_mutual_information(dataX[1:end-t], dataY[t:end])
+            joint = DelayEmbeddings.genembed(Dataset(dataX, dataY[i, :]), ts, emb_dim)
+            mutual_info = mutualInformation(joint, estimator; α = 1.0, base = 2)
+            write(file, "$serieChar $mutual_info \n")
+
+            println("now doing", ' ', mutual_info)
+        end
+    end
+
+
+end
+
+function MI_each_row(dataX, dataY, dataChar, ep, base_name_output_file)
+
+    "
+    compute MI for each row of data (the x one) in one of the two data files compared to the other
+    "
+
+    TEdata_folder = ep.data_folder * ep.export_folder * "Dat_files/"
+    make_dir_if_not_exist(TEdata_folder)
+
+    for (i, char) in enumerate(dataChar)
+        strChar = lpad(@sprintf("%.2i", char), 2, "0")
+        name_output_file = TEdata_folder * "MI_" * base_name_output_file * "_row-p" * strChar * ".txt"
+    
+        MI_each_column(dataX[i, :], dataY, name_output_file, ep, char)
+    
+    
+    end
+
+
+end
+
+
 
 function TE_each_delay(dataX, dataY, ep, serieChar)
 
@@ -349,31 +394,6 @@ function TE_each_delay(dataX, dataY, output_name, ep, serieChar)
 end
 
 
-
-
-function MI_each_delay(dataX, dataY, output_name, τ_range, τ_delays)
-
-    "
-    compute many MI for each tau delay
-    "
-    file_name = output_name[1:end-4] * "_MI_each-tau" * ".txt"
-    #τ_delays = (0, 0)
-    #emb_dim = (1, 2)
-
-    open(file_name, "w") do file
-        for t in τ_range - 1
-            mi_12 = get_mutual_information(dataX[1:end-t], dataY[t:end])
-            ts = changevector!(τ_delays, t, 2)
-            joint = DelayEmbeddings.genembed(Dataset(dataX, dataY), ts, emb_dim)
-            entropy = tranfserentropy(joint, estimator)
-            println("doing something? delay ", t, "  ", mi_12, "  ", entropy)
-            write(file, "$mi_12  $entropy\n")
-        end
-        #println("now doing", dataChar[i], ' ', mean_TE)
-    end
-    #mean.()#eachcol(df)
-
-end
 
 
 function TE_each_column(dataX, dataY, output_name, ep, serieChar)
@@ -547,17 +567,18 @@ end
 function what_to_correlate(pha_amp)
 
     if pha_amp[1] == "_pha" && pha_amp[2] == "_pha"
-        TE_each_row(dataX, dataX, dataChar, ep, base_name_output_file * "_pha_pha")
-        TE_data_rows_surrogates(base_name_output_file, dataChar, dataX, "_SePha", "-Pha", ep)
-
+        #TE_each_row(dataX, dataX, dataChar, ep, base_name_output_file * "_pha_pha")
+        #TE_data_rows_surrogates(base_name_output_file, dataChar, dataX, "_SePha", "-Pha", ep)
+        MI_each_row(dataX, dataY, dataChar, ep, base_name_output_file)
+    
     elseif pha_amp[1] == "_pha" && pha_amp[2] == "_amp"
         TE_each_row(dataX, dataY, dataChar, ep, base_name_output_file * "_pha_amp")
         TE_data_rows_surrogates(base_name_output_file, dataChar, dataX, "_SePha", "-Amp", ep)
-
+    
     elseif pha_amp[1] == "_amp" && pha_amp[2] == "_amp"
         TE_each_row(dataY, dataY, dataChar, ep, base_name_output_file)
         TE_data_rows_surrogates(base_name_output_file, dataChar, dataX, "_SeAmp", "-Amp", ep)
-
+    
     elseif pha_amp[1] == "_amp" && pha_amp[2] == "_pha"
         TE_each_row(dataY, dataY, dataChar, ep, base_name_output_file)
         TE_data_rows_surrogates(base_name_output_file, dataChar, dataX, "_SeAmp", "-Pha", ep)

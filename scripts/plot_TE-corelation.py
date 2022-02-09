@@ -86,6 +86,24 @@ def load_TransferEntropies(folder, data_root):
     return TEs_matrix
 
 
+def load_MutualInfos(folder, data_root):
+
+
+    name_files = sorted(fnmatch.filter(os.listdir(folder), 'MI_'+data_root+'*') )
+    
+
+    print(name_files)
+    size = len(name_files) 
+    MIs_matrix = np.empty( shape=(size, size))
+    for i, n in enumerate(name_files):
+        print('namTEma', i, n)
+        MIs_matrix[i][:] = np.genfromtxt(folder+n, delimiter=' ',
+                                   dtype=("f8"), unpack=True, usecols=[1])
+        
+
+    return MIs_matrix
+
+
     
 
 
@@ -226,20 +244,37 @@ def projection(matrix):
     
     return values_array, std_array
 
-def plot_array_vs_surr(data_arr, surr_arr, surr_var):
+def plot_array_vs_surr(TEs_matrix, surr_TE_matrix, surr_sdTE_matrix, indexs):
 
-    fig = plt.figure()
-    ax = fig.add_subplot(1, 1, 1)
+    fig, axs = plt.subplots(2, 1)
+    for i in indexs:
+        data_arr, surr_arr, surr_var = TEs_matrix[i], surr_TE_matrix[i], surr_sdTE_matrix[i]
+        axs[0].plot(scales, data_arr, color = 'r' )
+        axs[0].plot(scales, surr_arr, color = '0.8' )
+        axs[0].errorbar(scales, surr_arr, yerr = surr_var, color = '0.8')
+        axs[0].grid(True)
 
-    ax.plot(scales, data_arr, color = 'r' )
+        '''Z score'''
+        Zscore = compute_zscore(data_arr, surr_arr, surr_var)
 
-    ax.plot(scales, surr_arr, color = '0.8' )
-    ax.errorbar(scales, surr_arr, yerr = surr_var, color = '0.8')
-
-
-
+        axs[1].grid(True)
+        axs[1].plot(scales, Zscore)
 
 
+    fig.tight_layout()
+
+
+def compute_zscore(data_arr, surr_arr, surr_var):
+
+    Zscore = np.zeros(len(data_arr))
+    more = np.where(data_arr >= surr_arr)
+    less = np.where(data_arr <= surr_arr)
+
+    Zscore[more] = (abs(data_arr[more] -surr_arr[more] ) )/ surr_var[more] 
+
+    Zscore[less] = -(abs(data_arr[less] -surr_arr[less] ) )/ surr_var[less] 
+
+    return Zscore
 
 def matrixflip( m, d = 'h'):
     myl = np.array(m)
@@ -304,6 +339,8 @@ title = 'CMI ' + conf['names']['in_data_tag'][0:4] + ' ' + labels[0] + '-' + lab
 
 folder_TEdata = folder + "Dat_files/"
 TEs_matrix = load_TransferEntropies(folder_TEdata, data_root)
+MIs_matrix =load_TransferEntropies(folder_TEdata, 'MI_' + data_root)
+
 
 folder_surrogates = folder + "Su-"+conf['surrogates']['surr_kind'] + "_files/"
 surr_TE_matrix, surr_sdTE_matrix = load_surrogateEntropies(folder_surrogates, surr_root)
@@ -326,12 +363,15 @@ min_period = 6 #months
 step_period = int( (max_period - min_period) / np.shape(subMat)[0] + 0.5 )
 scales = (np.arange(min_period, max_period, step_period))
 
-plot_comoludogram_pixels(scales, matrixflip(subMat, 'v'), title, labels)
+#plot_comoludogram_pixels(scales, matrixflip(subMat, 'v'), title, labels)
+plot_comoludogram_pixels(scales, matrixflip(MIs_matrix, 'v'), title, labels)
+plot_comoludogram_simple(scales, MIs_matrix, title, labels)
 
-plot_comoludogram_simple(scales, subMat, title, labels)
 
-plot_comoludogram_simple(scales, signif_matrix1sd, title+" significance 1sd")
-plot_comoludogram_pixels(scales, matrixflip(signif_matrix1sd, 'v'), title+" significance 1sd", labels)
+#plot_comoludogram_simple(scales, subMat, title, labels)
+
+#plot_comoludogram_simple(scales, signif_matrix1sd, title+" significance 1sd")
+#plot_comoludogram_pixels(scales, matrixflip(signif_matrix1sd, 'v'), title+" significance 1sd", labels)
 
 #plot_projected_TE_vs_surr(scales, data_arr, data_var, surr_arr, surr_var )
 
@@ -343,8 +383,9 @@ labels = ['over x', 'over y']
 #plot_projected_diff(scales, dif_arr, dif_var )
 plot_data_sd(scales, data_arrays, colors, labels )
 
-index = 19#int(np.shape(TEs_matrix)[1]/2)
-plot_array_vs_surr(TEs_matrix[index], surr_TE_matrix[index], surr_sdTE_matrix[index])
+
+indexs = [ 9, 10, 11]
+plot_array_vs_surr(TEs_matrix, surr_TE_matrix, surr_sdTE_matrix, indexs)
 
 
 plt.show()
