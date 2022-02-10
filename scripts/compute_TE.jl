@@ -299,17 +299,18 @@ function MI_each_column(dataX, dataY, file_name, ep, serieChar)
     compute MI 
     "
     estimator, τ_range, τ_delays, emb_dim = inizilaize_embedings(ep, serieChar)
-    ts = (0, 0)
+    ts = (1, 1)
     emb_dim = (1, 2)
-    println("oooaooo", file_name)
+    #println("oooaooo", dataY)
+
     open(file_name, "w") do file
         for i = 1:size(dataY, 1)
-            #mi_12 = get_mutual_information(dataX[1:end-t], dataY[t:end])
+            #println("this is Y", i, "  ", dataY[i, :])
+            #mutual_info = get_mutual_information(dataX, dataY[i, :])
             joint = DelayEmbeddings.genembed(Dataset(dataX, dataY[i, :]), ts, emb_dim)
             mutual_info = mutualInformation(joint, estimator; α = 1.0, base = 2)
             write(file, "$serieChar $mutual_info \n")
-
-            println("now doing", ' ', mutual_info)
+            #println("now doing", ' ', mutual_info)
         end
     end
 
@@ -326,8 +327,11 @@ function MI_each_row(dataX, dataY, dataChar, ep, base_name_output_file)
     make_dir_if_not_exist(TEdata_folder)
 
     for (i, char) in enumerate(dataChar)
+    
+        #println("this is X", i, "  ", dataX[i, :])
         strChar = lpad(@sprintf("%.2i", char), 2, "0")
-        name_output_file = TEdata_folder * "MI_" * base_name_output_file * "_row-p" * strChar * ".txt"
+        name_output_file = TEdata_folder * "MI_" * base_name_output_file *
+                           "_row-p" * strChar * ".txt"
     
         MI_each_column(dataX[i, :], dataY, name_output_file, ep, char)
     
@@ -446,8 +450,11 @@ function TE_surrogate_set(surrogate_set, surr_folder, output_name, dataX, ep, se
     "compute the TE of a guiven time series with a guiven set of surrogates, 
     measure the mean and store it given a pattern of x y names or characteristics"
 
+    kind_of_ergodicity = Entropies.RectangularBinning(ep.Bin)
+    estimator = VisitationFrequency(kind_of_ergodicity)
 
     entropies = zeros(0)
+    mutual_infos = zeros(0)
     for i = 1:size(surrogate_set)[1]
         s = surrogate_set[i, :]
         if occursin("-Amp", output_name)
@@ -458,17 +465,22 @@ function TE_surrogate_set(surrogate_set, surr_folder, output_name, dataX, ep, se
             println("BE AWARE you are missing '_amp' or '_pha' in the name \n")
         end
 
+        joint = DelayEmbeddings.genembed(Dataset(dataX, dataY[i, :]), (0, 0), (1, 2))
+        MI = mutualInformation(joint, estimator; α = 1.0, base = 2)
+
         TE = TE_each_delay(dataX, compute, ep, serieChar)
-        #if i % 44 == 1
-        #    println("random eeeeeent  ", i, "  ", TE)
-        #end
+
+        append!(mutual_infos, MI)
         append!(entropies, TE)
     end
 
     name_surr_arrays = surr_folder * "set-" * output_name[1:end-4] * ".npy"
-    npzwrite(name_surr_arrays, entropies)
+    name_MI_surr_arrays = surr_folder * "MI_set-" * output_name[1:end-4] * ".npy"
 
-    return mean(entropies), std(entropies)
+    npzwrite(name_surr_arrays, entropies)
+    npzwrite(name_MI_surr_arrays, mutual_infos)
+
+    return mean(entropies), std(entropies), mean(mutual_infos), std(mutual_infos)
 
 end
 
@@ -488,15 +500,15 @@ function TE_all_surrogates(names_surrogates, surr_folder, output_name, dataSerie
     open( surr_folder * name_out_file, "w") do file
         for (i, n) in enumerate( names_surrogates)
             surrogate_set = npzread(ep.data_folder * ep.input_folder * n)
-            one_mean, one_var = TE_surrogate_set(surrogate_set, surr_folder, name_out_file,
-                dataSerie, ep, serieChar)
+            one_mean, one_var, MI_mean, MI_var = TE_surrogate_set(surrogate_set, surr_folder,
+             name_out_file, dataSerie, ep, serieChar)
 
             if i % length(names_surrogates)/2 == 1
                 println("mmmmmmmm   ", n, " ", one_mean, "+-", one_var)
             end
         
             x = n[end-7:end-4]
-            write(file, "$x $serieChar $one_mean $one_var\n")
+            write(file, "$x $serieChar $one_mean $one_var $MI_mean $MI_var\n")
         end
     end
 end
@@ -567,9 +579,9 @@ end
 function what_to_correlate(pha_amp)
 
     if pha_amp[1] == "_pha" && pha_amp[2] == "_pha"
-        #TE_each_row(dataX, dataX, dataChar, ep, base_name_output_file * "_pha_pha")
-        #TE_data_rows_surrogates(base_name_output_file, dataChar, dataX, "_SePha", "-Pha", ep)
-        MI_each_row(dataX, dataY, dataChar, ep, base_name_output_file)
+        TE_each_row(dataX, dataX, dataChar, ep, base_name_output_file * "_pha_pha")
+        TE_data_rows_surrogates(base_name_output_file, dataChar, dataX, "_SePha", "-Pha", ep)
+        MI_each_row(dataX, dataX, dataChar, ep, base_name_output_file * "_pha_pha")
     
     elseif pha_amp[1] == "_pha" && pha_amp[2] == "_amp"
         TE_each_row(dataX, dataY, dataChar, ep, base_name_output_file * "_pha_amp")
@@ -577,11 +589,11 @@ function what_to_correlate(pha_amp)
     
     elseif pha_amp[1] == "_amp" && pha_amp[2] == "_amp"
         TE_each_row(dataY, dataY, dataChar, ep, base_name_output_file)
-        TE_data_rows_surrogates(base_name_output_file, dataChar, dataX, "_SeAmp", "-Amp", ep)
+        TE_data_rows_surrogates(base_name_output_file, dataChar, dataY, "_SeAmp", "-Amp", ep)
     
     elseif pha_amp[1] == "_amp" && pha_amp[2] == "_pha"
-        TE_each_row(dataY, dataY, dataChar, ep, base_name_output_file)
-        TE_data_rows_surrogates(base_name_output_file, dataChar, dataX, "_SeAmp", "-Pha", ep)
+        TE_each_row(dataY, dataX, dataChar, ep, base_name_output_file)
+        TE_data_rows_surrogates(base_name_output_file, dataChar, dataY, "_SeAmp", "-Pha", ep)
     end
 
 

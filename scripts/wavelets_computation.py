@@ -134,12 +134,13 @@ def write_amplitude_phase_scale_wav(waves, scales, name_file):
     amp = []
     phase = []
     for w in waves:
+        #print("fufufufuf", len(w), w)
         amp.append( np.abs(w) )#np.sqrt( coef[0].imag**2 + coef[0].real**2 )
         phase.append(np.angle(w) )#np.arctan2( coef[0].imag, coef[0].real ) 
 
-    np.save(name_file+'_amp.npy', amp, allow_pickle=True, fix_imports=True)
-    np.save(name_file+'_pha.npy', phase, allow_pickle=True, fix_imports=True)
-    np.save(name_file+'_ska.npy', scales, allow_pickle=True, fix_imports=True)
+    np.save(name_file+'_amp.npy', np.array(amp), allow_pickle=True, fix_imports=True)
+    np.save(name_file+'_pha.npy', np.array(phase), allow_pickle=True, fix_imports=True)
+    np.save(name_file+'_ska.npy', np.array(scales), allow_pickle=True, fix_imports=True)
     return amp, phase
 
 def wav_reconstructed_signal(sig, waves, no_amp = True, individual_amp = False, global_amp = False ):

@@ -66,9 +66,9 @@ name_source = {
 }
 
 '''tag for the frequencies bands and signal'''
-sig_tag = 'rossler_phase'
+#sig_tag = 'rossler_phase'
 #sig_tag = 'rain_india_manuel'
-#sig_tag = 'ENSO_manuel'
+sig_tag = 'ENSO_manuel'
 #sig_tag = 'sin_signal'
 
 freq_tag = 'lin'
@@ -85,15 +85,14 @@ def freq_generation(freq_tag = 'lin', step_period = 1 , min_period =1 , max_peri
     amplitudes = []
     if freq_tag == 'seed':
 
-        seeds= [1/20., 1/100, 1/6, 1/3, 1/50,
-                1/200]  # freq, they shall be below one
+        seeds= [ 1/6, 1/3, 1/50]#1/20., 1/100, 1/200]  # freq, they shall be below one
         #frequencies = 1/np.array([0.083, 0.1,0.5,0.9,1,2,4,5,6,7,8, 16, 32,64, 126])#
-        amplitudes = [0.5, 1, 2, 1, 1, 2]
+        amplitudes = [0.5, 1, 2]#, 1, 1, 2]
         frequencies = np.array(seeds)
 
     elif freq_tag == 'lin':
 
-        step_period = 4 #months
+        step_period = 1 #months
         max_period = 85 #months
         min_period = 6 #months
         frequencies = 1./(np.arange(min_period, max_period, step_period))
@@ -147,11 +146,11 @@ if sig_tag == 'sin_signal':
     sig_tag = name_source[sig_tag] + \
         str(gauss)[0] + 'noise_' + str(noise)[0]
 
-    t = np.arange(600)
+    t = np.arange(6)
     t, sig = ps.create_signal(frequencies, amplitudes,
                               t, gauss=gauss, noise=noise)
     
-    t, sig = ps.get_ave_values(t, sig, 3)
+    #t, sig = ps.get_ave_values(t, sig, 3)
 
 sampling_dt = t[1]-t[0]
 #'''correct the signal time in spacific cases, depending on the units'''
@@ -219,11 +218,12 @@ print(' saving phase in ', output_data+output_dir+name_files + '_ska.npy\n')
 
 '''call to create surrogates'''
 n_surrogates = 11
-
-for w, f  in zip(waves, freq_bands):
+index = np.arange(len(waves))
+for w, f, i  in zip(waves, freq_bands, index):
     surr_name = 'surr_circ_' + name_files 
     #ident = 'f' + '{:04d}'.format(int(10000*f))
     surr_ident = '_p' + '{:04d}'.format(int(1/f))
+    print (i, surr_ident)
     su.many_surrogates( output_data+output_dir + surr_name + surr_ident,  w,
                        min_shift=30, n_surrogates=n_surrogates)
     
@@ -231,13 +231,13 @@ print('\n surr stored withthis path name', output_data+ output_dir + surr_name +
 
 
 '''reconstruct the signal form the wavelets'''
-rec_signal_niko = wc.wav_reconstructed_signal(sig, waves, no_amp=False, individual_amp=True)
+#rec_signal_niko = wc.wav_reconstructed_signal(sig, waves, no_amp=False, individual_amp=True)
 
 
 '''plot signals and wavelets'''
 #wp.plot_signal_phase_fft(t, sig, unit, freq_spectrum, frequencies, fft1d)
-wp.plot_scalogram_fft_signal_together(
-    t, sig, freq_bands,  waves, unit, waveletname=kernel)
+##wp.plot_scalogram_fft_signal_together(
+#    t, sig, freq_bands,  waves, unit, waveletname=kernel)
 
 
 bashCommand = "julia --project=. ./scripts/compute_TE.jl ./confs/config_embeding_char.ini"
@@ -254,7 +254,7 @@ output, error = process.communicate()
 #ax = wp.provide_axis()
 #wp.plot_wavelet_scalogram(ax, t, freq_bands_niko, waves_niko, unit, waveletname = kernel_niko  )
 #wp.plot_waves_amplitude_phase_WL('python wavelet', sig, rec_signal_pywt, waves_pywt, freq_bands_pywt )
-wp.plot_waves_amplitude_phase_WL(sig_tag, sig, rec_signal_niko, waves, frequencies)
+###wp.plot_waves_amplitude_phase_WL(sig_tag, sig, rec_signal_niko, waves, frequencies)
 #wp.plot_comparison_methods(waves_pywt[0], waves_niko[0], sig, rec_signal_pywt, rec_signal_niko)
-wp.plot_all()
+##wp.plot_all()
 
