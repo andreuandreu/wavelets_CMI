@@ -455,6 +455,7 @@ function TE_surrogate_set(surrogate_set, surr_folder, output_name, dataX, ep, se
 
     entropies = zeros(0)
     mutual_infos = zeros(0)
+
     for i = 1:size(surrogate_set)[1]
         s = surrogate_set[i, :]
         if occursin("-Amp", output_name)
@@ -462,7 +463,7 @@ function TE_surrogate_set(surrogate_set, surr_folder, output_name, dataX, ep, se
         elseif occursin("-Pha", output_name)
             compute = angle.(s[1:end-1])
         else
-            println("BE AWARE you are missing '_amp' or '_pha' in the name \n")
+            println("BE AWARE you are missing -Amp' or '-Pha' in the namin the name \n")
         end
 
         joint = DelayEmbeddings.genembed(Dataset(dataX, dataY[i, :]), (0, 0), (1, 2))
@@ -544,6 +545,100 @@ function TE_data_rows_surrogates(base_name_output_file, dataChar, dataSeries,
 
 end
 
+
+
+"MI surrogates"
+
+
+function MI_data_rows_surrogates(base_name_output_file, dataChar, dataSeries,
+    tagSeries, amp_or_phase_surr, ep)
+
+    "
+    compute TE for each row of data for each set of surrogates with varing frequencies (periods)
+    "
+
+    surr_root = "surr_circ_"
+
+    #amp_or_phase_surr = "-pha"
+
+    println("NIGHTMARE in ", ep.data_folder * ep.input_folder * surr_root * ep.in_data_tag)
+    names_surrogates = frequencies_names(ep.data_folder * ep.input_folder, surr_root * ep.in_data_tag)
+
+    surr_folder = ep.data_folder * ep.export_folder * "Su-" * ep.surr_kind * "_files/"
+    make_dir_if_not_exist(surr_folder)
+
+    name_output_file = "MI_" * base_name_output_file * tagSeries * "_Su" * amp_or_phase_surr
+    println("NIGHTMARE out ", name_output_file)
+
+    for (i, char) in enumerate(dataChar)
+        MI_column_surrogates(names_surrogates, surr_folder, name_output_file, dataSeries[i, :], char, ep)
+    end
+
+end
+
+
+function MI_column_surrogates(names_surrogates, surr_folder, output_name, dataSerie, serieChar, ep)
+    #τ_range, τ_delays, emb_dim, estimator
+    "
+    for each set of surrogates, compute the MI with a given data series and print it in a file
+    "
+    extra_name_emb = get_emb_dim_name(ep)
+    strChar = lpad(@sprintf("%.2i", serieChar), 2, "0")
+    #name_out_file = output_name * extra_name_emb * "_p$(@sprintf("%.2i", serieChar))" * ".txt"
+    name_out_file = output_name * extra_name_emb * "_p" * strChar * ".txt"
+
+
+    println("\n NANANANA ", name_out_file)
+
+    open(surr_folder * name_out_file, "w") do file
+        for (i, n) in enumerate(names_surrogates)
+            surrogate_set = npzread(ep.data_folder * ep.input_folder * n)
+            MI_mean, MI_var = MI_surrogate_set(surrogate_set, surr_folder,
+                name_out_file, dataSerie, ep, serieChar)
+            
+            x = n[end-7:end-4]
+            println("mmmmmmmm   ", x, " ", serieChar)
+            write(file, "$x $serieChar $MI_mean $MI_var\n")
+        end
+    end
+end
+
+
+function MI_surrogate_set(surrogate_set, surr_folder, output_name, dataX, ep, serieChar)
+
+    "compute the TE of a guiven time series with a guiven set of surrogates, 
+    measure the mean and store it given a pattern of x y names or characteristics"
+
+    kind_of_ergodicity = Entropies.RectangularBinning(ep.Bin)
+    estimator = VisitationFrequency(kind_of_ergodicity)
+
+    mutual_infos = zeros(0)
+
+    for i = 1:size(surrogate_set)[1]
+        s = surrogate_set[i, :]
+        if occursin("-Amp", output_name)
+            compute = abs.(s[1:end-1])
+        elseif occursin("-Pha", output_name)
+            compute = angle.(s[1:end-1])
+        else
+            println("BE AWARE you are missing -Amp' or '-Pha' in the name \n")
+        end
+
+        joint = DelayEmbeddings.genembed(Dataset(dataX, dataY[i, :]), (0, 0), (1, 2))
+        MI = mutualInformation(joint, estimator; α = 1.0, base = 2)
+
+        append!(mutual_infos, MI)
+    end
+
+    name_MI_surr_arrays = surr_folder * "MI_set-" * output_name[1:end-4] * ".npy"
+
+    npzwrite(name_MI_surr_arrays, mutual_infos)
+
+    return mean(mutual_infos), std(mutual_infos)
+
+end
+
+
 function TE_binary_percentil(TEmatrix, SurrMats)
 
     for m in SurrMats
@@ -579,9 +674,11 @@ end
 function what_to_correlate(pha_amp)
 
     if pha_amp[1] == "_pha" && pha_amp[2] == "_pha"
-        TE_each_row(dataX, dataX, dataChar, ep, base_name_output_file * "_pha_pha")
-        TE_data_rows_surrogates(base_name_output_file, dataChar, dataX, "_SePha", "-Pha", ep)
-        MI_each_row(dataX, dataX, dataChar, ep, base_name_output_file * "_pha_pha")
+        #TE_each_row(dataX, dataX, dataChar, ep, base_name_output_file * "_pha_pha")
+        #TE_data_rows_surrogates(base_name_output_file, dataChar, dataX, "_SePha", "-Pha", ep)
+        #MI_each_row(dataX, dataX, dataChar, ep, base_name_output_file * "_pha_pha")
+        MI_data_rows_surrogates(base_name_output_file, dataChar, dataX,
+            "_SePha", "-Pha", ep)
     
     elseif pha_amp[1] == "_pha" && pha_amp[2] == "_amp"
         TE_each_row(dataX, dataY, dataChar, ep, base_name_output_file * "_pha_amp")
