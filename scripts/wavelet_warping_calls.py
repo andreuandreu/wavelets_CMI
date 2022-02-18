@@ -5,6 +5,7 @@ import wavelets_computation as wc
 import wavelets_ploting as wp
 import surogates as su
 import create_config  as cc
+import twin_surrogates as ts
 #import matplotlib.pyplot as plt
 import os
 import subprocess
@@ -174,8 +175,6 @@ nyquist = int(len(fft1d))
 
 '''compute wavelet decomposition for 2 different methods'''
 
-
-
 if wav_method == 'pywt':
     kernel = 'cmor1.5-1.0'  # 'cmor'# #kind of wavelet kernel'gaussian'#
     waves, freq_bands = wc.pywt_compute_wavelets(sig, frequencies,
@@ -228,6 +227,13 @@ for w, f, i  in zip(waves, freq_bands, index):
                        min_shift=30, n_surrogates=n_surrogates)
     
 print('\n surr stored withthis path name', output_data+ output_dir + surr_name + surr_ident, '\n')
+
+'''twin surrogates'''
+
+twins  = ts.Surrogates
+
+twins.twin_surrogates( sig, dimension = 1, dalay = 30, threshold = 1, min_dist=7)
+
 
 
 '''reconstruct the signal form the wavelets'''
