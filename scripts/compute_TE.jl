@@ -137,7 +137,7 @@ end
 
 function inizilaize_embedings(ep, serieChar)
 
-    backwardLag = trunc(Int, serieChar / 4.0)
+    backwardLag = -trunc(Int, serieChar / 4.0)
 
     kind_of_ergodicity = Entropies.RectangularBinning(ep.Bin)
 
@@ -400,50 +400,54 @@ end
 
 
 
-function TE_each_column(dataX, dataY, output_name, ep, serieChar)
+function TE_each_column(dataX, dataY, output_name, ep, serieChar, j)
 
     "
     compute TE and measure a mean for a set of N timeseries (the Y one)
     "
-    half_len = trunc(Int, size(dataY, 1)/2)
+    #half_len = trunc(Int, size(dataY, 1) / 2)
     #println(half_len, "  ", size(dataY),"  ", size(dataY,1))
     open(output_name, "w") do file
-        for i = half_len-4:half_len-1#1:size(dataY[:], 1)
+        for i = 1:size(dataY[:,1], 1)#half_len-4:half_len-1#
             mean_entropy = TE_each_delay(dataX, dataY[i, :], ep, serieChar)# output_name, 
             #file_name = output_name  * ".txt"
             #write_entropies_tau(file_name, entropies)
             #if i % half_len == 1
-            println("now doing ", serieChar, "  ", dataChar[i], ' ', mean_entropy)
-            println("data sample ", dataX[555], "  ", dataY[i, 555], )
+            #println("now doing ", j, "  ", i, ' ', mean_entropy)
+            #println("data sample ", dataX[1], "  ", dataY[i, 1],)
             #end
             write(file, "$serieChar $mean_entropy\n")
         end
     end
 end
 
+function check_if_nan_inf(data)
+
+
+    for i in eachindex(data)
+        for j in eachindex(data[i, :])
+            if isnan(data[i, j]) | isinf(dat[i, j])
+                println("NON A NUMBER! Bs = ", i, "  ", j, "  ", data[i, j])
+            end
+        end
+    end
+
+end
 
 function TE_each_row(dataX, dataY, dataChar, ep, base_name_output_file)
 
     "
     compute TE for each row of data (the x one) in one of the two data files compared to the other
     "
-    half_len = trunc(Int, length(dataChar) / 2)
+    #half_len = trunc(Int, length(dataChar) / 2)
     TEdata_folder = ep.data_folder * ep.export_folder * "Dat_files/"
     make_dir_if_not_exist(TEdata_folder)
 
-    for i in eachindex(dataChar)
-        for j in eachindex(dataX[i, :])
-            if isnan(dataX[i, j]) | isinf(dataX[i, j])
-                println("NON A NUMBER! Bs = ", i ,"  " , j, "  ", dataX[i, j])
-            end
-        end 
-    end
-
-    for (i, char) in enumerate(dataChar[half_len-5:half_len])
+    for (i, char) in enumerate(dataChar)#[half_len-5:half_len]
         strChar = lpad(@sprintf("%.2i", char), 2, "0")
         name_output_file = TEdata_folder * base_name_output_file * "_row-p" * strChar * ".txt"
-
-        TE_each_column(dataX[i, :], dataY, name_output_file, ep, char)
+    
+        TE_each_column(dataX[i, :], dataY, name_output_file, ep, char, i)
         if i % 20 == 3
             println("entropies have been stored in here ", name_output_file)
         end
@@ -549,7 +553,6 @@ function TE_data_rows_surrogates(base_name_output_file, dataChar, dataSeries,
 
     for (i, char) in enumerate(dataChar)
 
-
         TE_all_surrogates(names_surrogates, surr_folder, name_output_file, dataSeries[i, :], char, ep)
 
     end
@@ -609,7 +612,7 @@ function MI_column_surrogates(names_surrogates, surr_folder, output_name, dataSe
                 name_out_file, dataSerie, ep, serieChar)
             
             x = n[end-7:end-4]
-            println("mmmmmmmm   ", x, " ", serieChar)
+            #println("mmmmmmmm   ", x, " ", serieChar)
             write(file, "$x $serieChar $MI_mean $MI_var\n")
         end
     end
@@ -687,14 +690,14 @@ function what_to_correlate(pha_amp)
 
     if pha_amp[1] == "_pha" && pha_amp[2] == "_pha"
         TE_each_row(dataX, dataX, dataChar, ep, base_name_output_file * "_pha_pha")
-        #TE_data_rows_surrogates(base_name_output_file, dataChar, dataX, "_SePha", "-Pha", ep)
+        TE_data_rows_surrogates(base_name_output_file, dataChar, dataX, "_SePha", "-Pha", ep)
         #MI_each_row(dataX, dataX, dataChar, ep, base_name_output_file * "_pha_pha")
         #MI_data_rows_surrogates(base_name_output_file, dataChar, dataX,
         #    "_SePha", "-Pha", ep)
     
     elseif pha_amp[1] == "_pha" && pha_amp[2] == "_amp"
         TE_each_row(dataY, dataX, dataChar, ep, base_name_output_file * "_pha_amp")
-        #TE_data_rows_surrogates(base_name_output_file, dataChar, dataX, "_SePha", "-Amp", ep)
+        TE_data_rows_surrogates(base_name_output_file, dataChar, dataX, "_SePha", "-Amp", ep)
     
     elseif pha_amp[1] == "_amp" && pha_amp[2] == "_amp"
         TE_each_row(dataY, dataY, dataChar, ep, base_name_output_file)

@@ -1010,15 +1010,3 @@ def _advanced_local_clustering(
                         counter += 1
 
             advanced_clustering[i] = counter / norm[i]
-© 2022 GitHub, Inc.
-Terms
-Privacy
-Security
-Status
-Docs
-Contact GitHub
-Pricing
-API
-Training
-Blog
-About

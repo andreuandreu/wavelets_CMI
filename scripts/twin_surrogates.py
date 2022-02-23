@@ -9,7 +9,9 @@ import pyximport
 pyximport.install()
 from _ext.numerics import _twins_s, _twin_surrogates
 #from numerics import  
-
+#from ._ext.numerics import _embed_time_series_array, _recurrence_plot, \
+#    _twins_s, _twin_surrogates, _test_pearson_correlation, \
+#    _test_mutual_information
 
 # easy progress bar handling
 from ..utils import progressbar

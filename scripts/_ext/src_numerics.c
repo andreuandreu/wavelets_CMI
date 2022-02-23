@@ -1,31 +1,4 @@
-*
-* !/usr/bin/python
-* -*- coding: utf-8 -*-
-*
-* This file is part of pyunicorn.
-* Copyright (C) 2008--2019 Jonathan F. Donges and pyunicorn authors
-* URL: <http://www.pik-potsdam.de/members/donges/software>
-* License: BSD (3-clause)
-*/
 
-// cross_recurrence_plot ======================================================
-
-void _manhattan_distance_matrix_fast(int ntime_x, int ntime_y, int dim, 
-    double *x_embedded, double *y_embedded, float *distance)  {
-
-    float sum;
-    //  Calculate the manhattan distance matrix
-    for (int j = 0; j < ntime_x; j++) {
-        for (int k = 0; k < ntime_y; k++) {
-            sum = 0;
-            for (int l = 0; l < dim; l++) {
-                //  Use manhattan norm
-                sum += fabs(x_embedded[j*ntime_x+l] - y_embedded[k*ntime_y+l]);
-            }
-            distance[j*ntime_x+k] = sum;
-        }
-    }
-}
 
 
 void _euclidean_distance_matrix_fast(int ntime_x, int ntime_y, int dim, 
@@ -241,18 +214,10 @@ void _test_mutual_information_fast(int N, int n_time, int n_bins,
 
                             hpm = (*p_hist_surrogates) * norm;
 
-                            if (hpm > 0.0) {© 2022 GitHub, Inc.
-Terms
-Privacy
-Security
-Status
-Docs
-Contact GitHub
-Pricing
-API
-Training
-Blog
-About
+                            if (hpm > 0.0) { 
+                                plm = (*p_hist2d) * norm;
+                                if (plm > 0.0)
+                                    *p_mi += plm * log(plm/hpm/hpl);
                             }
 
                             //  Set pointer to hist_surrogates(j,m+1)

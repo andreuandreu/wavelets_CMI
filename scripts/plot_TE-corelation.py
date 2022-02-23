@@ -101,16 +101,48 @@ def load_MutualInfos(folder, data_root):
     for i, n in enumerate(name_files):
         print('namTEma', i, n)
         MIs_matrix[i][:] = np.genfromtxt(folder+n, delimiter=' ',
-                                   dtype=("f8"), unpack=True, usecols=[1])
-        
-
+                                   dtype=("f8"), unpack=True, usecols=[1])      
     return MIs_matrix
 
 
-    
-
-
 def load_surrogateEntropies(folder, data_root):
+
+    name_files = sorted( fnmatch.filter(os.listdir(folder), data_root+'*') )
+
+    size = len(name_files)
+    print('ssssssssss', size)
+    if size < 1:
+        print('nothing here ', folder+data_root)
+        print('ERRROR, bad path to names')
+        raise SystemExit
+        
+
+    TEs_matrix = np.empty(shape=(size, 4, size))
+    surr_TE_matrix = np.empty(shape=(size, size))
+    surr_sdTE_matrix = np.empty(shape=(size, size))
+
+    surr_MI_matrix = np.empty(shape=(size, size))
+    surr_sdMI_matrix = np.empty(shape=(size, size))
+
+    all_surr = np.array([])
+    for i, n in enumerate(name_files):
+        print(i, 'n', n)
+        TEs_matrix[i][:][:] = np.genfromtxt(folder+"/"+n, delimiter=' ',
+             dtype=("f8", "f8" , "f8", "f8"), unpack=True, usecols=[2, 3, 4, 5])
+
+
+        surr_TE_matrix[i][:] = TEs_matrix[i][0][:]
+        surr_sdTE_matrix[i][:] = TEs_matrix[i][1][:]
+
+        surr_MI_matrix[i][:] = TEs_matrix[i][2][:]
+        surr_sdMI_matrix[i][:] = TEs_matrix[i][3][:]
+
+        np.append( all_surr, np.load(folder + "set-" + n[:-4] + '.npy' ))
+    
+    return surr_TE_matrix, surr_sdTE_matrix, surr_MI_matrix, surr_sdMI_matrix
+
+
+def load_surrogateSets(folder, data_root):
 
     name_files = sorted( fnmatch.filter(os.listdir(folder), data_root+'*') )
 
@@ -265,12 +297,14 @@ def plot_array_vs_surr(TEs_matrix, surr_TE_matrix, surr_sdTE_matrix, indexs):
         axs[0].plot(scales, surr_arr, color = '0.8' )
         axs[0].errorbar(scales, surr_arr, yerr = surr_var, color = '0.8')
         axs[0].grid(True)
+        axs[0].set_title('Signal CMI vs surrogate CMI', size=30)
 
         '''Z score'''
         Zscore = compute_zscore(data_arr, surr_arr, surr_var)
 
         axs[1].grid(True)
         axs[1].plot(scales, Zscore)
+        axs[1].set_title('z-score', size=30)
 
 
     fig.tight_layout()
@@ -322,8 +356,8 @@ def sigma_subtract(TEmat, surMat, sigmaMat):
 
 
 tag = 'sin'
-#to_plot = ['pha', 'amp']
-to_plot = ['pha', 'pha']
+to_plot = ['pha', 'amp']
+#to_plot = ['pha', 'pha']
 #wavelet = 'niko'
 
 #name_config_file = './confs/config_embeding_char_ENSO_pywt.ini'
@@ -350,47 +384,54 @@ labels = to_plot
 title = 'CMI ' + conf['names']['in_data_tag'][0:4] + ' ' + labels[0] + '-' + labels[1]
 
 folder_TEdata = folder + "Dat_files/"
-#TEs_matrix = load_TransferEntropies(folder_TEdata, data_root)
-MIs_matrix =load_TransferEntropies(folder_TEdata, 'MI_' + data_root)
 
-
+"""load stuff"""
 folder_surrogates = folder + "Su-"+conf['surrogates']['surr_kind'] + "_files/"
 surr_TE_matrix, surr_sdTE_matrix, surr_MI_matrix, surr_sdMI_matrix  = \
      load_surrogateEntropies(folder_surrogates, surr_root)
 
-#signif_matrix1sd = sigma_subtract(TEs_matrix, surr_TE_matrix, surr_sdTE_matrix )
+max_period = 85 #months
+min_period = 6 #months
 
-#subMat_TE = TEs_matrix  - surr_TE_matrix
+
+"""TEs stuff"""
+
+TEs_matrix = load_TransferEntropies(folder_TEdata, data_root)
+subMat_TE = TEs_matrix  - surr_TE_matrix
+
+
+step_period = int( (max_period - min_period) / np.shape(TEs_matrix)[0] + 0.5 )
+scales = (np.arange(min_period, max_period, step_period))
+
+plot_comoludogram_pixels(scales, matrixflip(subMat_TE, 'v'), title, labels)
+plot_comoludogram_simple(scales, subMat_TE, title, labels)
+
+
+signif_matrix1sd = sigma_subtract(TEs_matrix, surr_TE_matrix, surr_sdTE_matrix )
+
+plot_comoludogram_simple(scales, signif_matrix1sd, title+" significance 1sd")
+plot_comoludogram_pixels(scales, matrixflip(signif_matrix1sd, 'v'), title+" significance 1sd", labels)
+
+
+"""MI stuff"""
+
+#MIs_matrix =load_TransferEntropies(folder_TEdata, 'MI_' + data_root)
+
+#subMat_MI =  surr_MI_matrix#MIs_matrix  -
+#plot_comoludogram_pixels(scales, matrixflip(subMat_MI, 'v'), title, labels)
+#plot_comoludogram_simple(scales, subMat_MI, title, labels)
 
 #data_arr, data_var = projection(TEs_matrix)
 #surr_arr, surr_var = projection(surr_TE_matrix)
 
-
-
 #dif_arr, dif_var = projection(subMat_TE.T)
-
-
-max_period = 85 #months
-min_period = 6 #months
-
-step_period = int( (max_period - min_period) / np.shape(MIs_matrix)[0] + 0.5 )
-scales = (np.arange(min_period, max_period, step_period))
-
-#plot_comoludogram_pixels(scales, matrixflip(subMat_TE, 'v'), title, labels)
-subMat_MI =  surr_MI_matrix#MIs_matrix  -
-plot_comoludogram_pixels(scales, matrixflip(subMat_MI, 'v'), title, labels)
-plot_comoludogram_simple(scales, subMat_MI, title, labels)
-
-
-#plot_comoludogram_simple(scales, subMat_TE, title, labels)
-
-#plot_comoludogram_simple(scales, signif_matrix1sd, title+" significance 1sd")
-#plot_comoludogram_pixels(scales, matrixflip(signif_matrix1sd, 'v'), title+" significance 1sd", labels)
 
 #plot_projected_TE_vs_surr(scales, data_arr, data_var, surr_arr, surr_var )
 
 #data_arrays = [projection(subMat_TE), projection(subMat_TE.T)]
 
+
+"""Z-score stuff"""
 colors = ['r', 'b']
 labels = ['over x', 'over y']
 
@@ -398,8 +439,8 @@ labels = ['over x', 'over y']
 #plot_data_sd(scales, data_arrays, colors, labels )
 
 
-indexs = [ 9, 10, 11]
-#plot_array_vs_surr(TEs_matrix, surr_TE_matrix, surr_sdTE_matrix, indexs)
+indexs = [ 4, 10, 11]
+plot_array_vs_surr(TEs_matrix, surr_TE_matrix, surr_sdTE_matrix, indexs)
 
 
 plt.show()

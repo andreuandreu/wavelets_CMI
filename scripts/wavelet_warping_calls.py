@@ -10,6 +10,8 @@ import twin_surrogates as ts
 import os
 import subprocess
 
+
+
 '''
 code that warps the functions necessary tu do a preliminary analysis of a guiven signal in 
 wavelets, save them in .npy files and plot them.
@@ -67,9 +69,9 @@ name_source = {
 }
 
 '''tag for the frequencies bands and signal'''
-#sig_tag = 'rossler_phase'
+sig_tag = 'rossler_phase'
 #sig_tag = 'rain_india_manuel'
-sig_tag = 'ENSO_manuel'
+#sig_tag = 'ENSO_manuel'
 #sig_tag = 'sin_signal'
 
 freq_tag = 'lin'
@@ -93,7 +95,7 @@ def freq_generation(freq_tag = 'lin', step_period = 1 , min_period =1 , max_peri
 
     elif freq_tag == 'lin':
 
-        step_period = 1 #months
+        step_period = 6 #months
         max_period = 85 #months
         min_period = 6 #months
         frequencies = 1./(np.arange(min_period, max_period, step_period))
@@ -230,9 +232,9 @@ print('\n surr stored withthis path name', output_data+ output_dir + surr_name +
 
 '''twin surrogates'''
 
-twins  = ts.Surrogates
+#twins  = ts.Surrogates
 
-twins.twin_surrogates( sig, dimension = 1, dalay = 30, threshold = 1, min_dist=7)
+#twins.twin_surrogates( sig, dimension = 1, dalay = 30, threshold = 1, min_dist=7)
 
 
 
