@@ -1,9 +1,10 @@
+
 from numpy.core.numeric import base_repr
 from numpy.testing._private.utils import nulp_diff
 import pandas as pd
 import matplotlib.pyplot as plt
-import generate_colored_noises as gcn
-import surogates as srg
+import src.generate_colored_noises as gcn
+import src.surogates as srg
 import pandas as pd
 import numpy as np
 from numpy import random as rn

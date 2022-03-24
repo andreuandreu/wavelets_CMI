@@ -1,2 +1,0 @@
-./data/exp_pro/correlations_TE/couplings_TE_Bin=3_est=Kra_maxlag=50_tsjs=0-10-5050_12222.txt
-./data/exp_pro/correlations_TE/couplings_TE_Bin=3_est=Kra_maxlag=50_tsjs=0-10-5050_21111.txt

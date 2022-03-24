@@ -6,8 +6,8 @@ import matplotlib.gridspec as gridspec
 
 import numpy as np
 from numpy.fft import fft, ifft
-import wavelets_computation as wc
-import provide_signals as css
+import src.wavelets_computation as wc
+import src.provide_signals as css
 
 '''
  plots
@@ -74,7 +74,7 @@ def plot_fft(ax, freq_spectrum, fft_freq, fft1d, plot_direction='vertical', ytic
     if plot_direction == 'vertical':
 
         #fft with scales (periods/dimension) in log scale
-        scales = 1./fft_freq
+        scales = 1./(fft_freq +1)
         scales_log = np.log2(scales)
         ax.scatter([np.mean(fft1d)-0.5] * len(freq_spectrum), np.log2(1/freq_spectrum))
         ax.plot(fft1d/np.mean(fft1d), scales_log,

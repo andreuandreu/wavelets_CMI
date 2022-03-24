@@ -3,12 +3,12 @@ from numpy.testing._private.utils import nulp_diff
 import pandas as pd
 import matplotlib.pyplot as plt
 
-import wavelet_analysis as wa
+import src.wavelet_analysis as wa
 import numpy as np
 from numpy.fft import fft, ifft
 import pywt
 from scipy import signal
-import provide_signals as css
+import src.provide_signals as css
 
 
 '''
