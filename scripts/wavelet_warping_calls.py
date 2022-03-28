@@ -258,9 +258,9 @@ def main():
         t, sig, freq_bands,  waves, unit, waveletname=kernel)
 
 
-    #bashCommand = "julia --project=. ./scripts/compute_TE.jl ./confs/config_embeding_char.ini"
-    #process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
-    #output, error = process.communicate()
+    bashCommand = "julia --project=. ./scripts/compute_TE.jl ./confs/config_embeding_char.ini"
+    process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
+    output, error = process.communicate()
 
 
 

@@ -165,15 +165,13 @@ def create_victor_signal(num_segments,  base_length, delay = 2, amp_min = 10,  f
     amp_sequence = rn.uniform(-1, 1, num_segments) + amp_min #amplitude of each sequence 
     print('dur, amplitudes sequence', dur, amp_sequence)
 
-    π = np.pi
-
     def phase_signal():
         '''Create the phase signal [~10 Hz]'''
         sig_ph=[]
         t_freq=[]
         for i in range(num_segments):
             t_aux = np.arange( 0, 1.0, 1.0/int( np.round(base_length*dur[i], 2) ) )
-            signal_segment = amp_sequence[i]*(np.sin(2*π*freq_sequence[i]*t_aux + 1.5*π) +1.0 )#
+            signal_segment = amp_sequence[i]*(np.sin(2*np.pi*freq_sequence[i]*t_aux + 1.5*np.pi) +1.0 )#
             t_freq.append(t_aux + i)
             sig_ph.append(signal_segment)
 
@@ -192,7 +190,7 @@ def create_victor_signal(num_segments,  base_length, delay = 2, amp_min = 10,  f
 
         for i in range(len(t_freq)):
             aux1 = 1 - (1 / (1 + np.exp(-amplitude*(sig_ph[i] - c) )) )  
-            aux2 = (np.sin(2*π*f_amp*t[i]) + 1)
+            aux2 = (np.sin(2*np.pi*f_amp*t[i]) + 1)
             sig_amp.append( aux1 * aux2 ) 
 
         #plt.plot(t, sig_amp)

@@ -1,9 +1,9 @@
-    
-    
-    # array object and fast numerics
+import sys
+sys.path.append('.')
+# array object and fast numerics
 import numpy as np
 from numpy import random
-import sys
+
 #sys.path.append(".")
 import pyximport
 pyximport.install()#._ext/
@@ -14,7 +14,7 @@ pyximport.install()#._ext/
 #from numerics import  
 print("In module products sys.path[0], __package__ ==", sys.path[0], __package__)
 #from ..utils import progressbar
-from numerics import _twins_s, _twin_surrogates
+from src._ext.numerics import _twins_s, _twin_surrogates
 #from ._ext import numerics
 # easy progress bar handling
 
