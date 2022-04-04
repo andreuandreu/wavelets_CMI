@@ -1,4 +1,5 @@
-
+import sys
+sys.path.append('.')
 from numpy.core.numeric import base_repr
 from numpy.testing._private.utils import nulp_diff
 import pandas as pd
@@ -7,18 +8,43 @@ import src.generate_colored_noises as gcn
 import src.surogates as srg
 import pandas as pd
 import numpy as np
-from numpy import random as rn
+from numpy import random as rn, size
 from scipy import signal
 from scipy import io
 import random as rd
 import calendar
 from dateutil.parser import parse
 
+import scipy.io
+
+def transform_matlab_data():
+
+    mat = scipy.io.loadmat('/home/arinyoprats/Dropbox/transfer_inormation_prague/TE_electrodes/dataICA.mat') 
+
+    #print('mamamam', mat)
+    #print(mat.keys())
+    #print(mat['dataICA'][1].shape)
+    #print(mat['dataICA'])
+    print(mat['dataICA'][0][0].shape)
+    #print(mat['dataICA'][0][0][4].shape)
+
+
+    #data = [line for line in mat['dataICA'][0][0]]
+    columns = ['S10','S11','S12','S13','S14']
+    rows = ['Sch-IC', 'lm-IC', 'PP-IC']
+    for s, n in zip(mat['dataICA'][0][0], columns):
+        #data = [[lin.flat[0] for lin in line] for line in s]
+        #df_train = pd.DataFrame(data, columns=rows)
+        print(type(s), size(s), s.shape)
+        np.savetxt('./data/input/'+ n + '.txt', s.T, delimiter=',')
+    #df_train = pd.DataFrame(data, columns=columns)
+
+    #print(df_train)
     
 def noise_signal(length_n):
     '''Create noise signals'''
-    return rn.uniform(0, 1, length_n)
 
+    return rn.uniform(0, 1, length_n)
 def noise_phase():
     '''Create noise phase'''
     return rn.uniform(0, 2*np.pi)
@@ -281,7 +307,7 @@ def plot_delayed_undelayed():
 
 
 #victor_sig = io.loadmat('./data/exp_pro/matlab_victor_sin_data/signal_alpha2gamma.mat')
-
+transform_matlab_data()
 
 '''compute delay signal
 num_segments = 3#100

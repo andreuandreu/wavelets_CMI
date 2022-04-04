@@ -1,6 +1,7 @@
 from numpy import random as rd
 import random as rd
 import numpy as np
+from pyunicorn.timeseries import surrogates as su
 
 
 
@@ -33,13 +34,17 @@ def many_surrogates(name, data, root = 'surr_', min_shift=1, n_surrogates = 111,
         #np.append(surrogates, [data_shifted], axis=0)
         if txt:
             name_file = name + '_' + "{0:0>3}".format(i) + '.txt'
-            np.savetxt(name , np.append(data_shifted, shift),
-                   fmt='%.5e', newline='\n')
+            np.savetxt(name ,    np.append(data_shifted, shift),
+             
+             
+             
+                     fmt='%.5e', newline='\n')
     
     name_file = name  + '.npy'
     np.save(name_file, surrogates)
 
-    
-
-        
-
+data = np.array([np.arange(1,1111,4), np.arange(1,1111,4)])
+sur = su.Surrogates(data.astype('FLOATTYPE_t'))
+twin_sur = sur.twin_surrogates(data, dimension = 1, delay = 33, threshold = 4,
+                        min_dist=7)  
+print('im doing someting >))))', su)

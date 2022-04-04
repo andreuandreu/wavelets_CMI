@@ -28,19 +28,45 @@ it consists of 3 main parts
 Associated with these parts there are the corresponding plotting and data generating tools
 
 
-## Getting Started
+# Getting Started
 
-# the code has four three main parts as of now:
 
-0. create configuration file to define the options to run
+
+## Prerequisites
+
+Python 3, Julia 1.6 
+
+## Installing and running
+
+For the julia part of this project
+
+0. Download this code base. Notice that raw data are typically not included in the
+   git-history and may need to be downloaded independently.
+1. Open a Julia console and do:
+
+      ```
+      julia> using Pkg
+      julia> Pkg.activate("path/to/this/project")
+      julia> Pkg.instantiate()
+      julia> Pkg.add("NPZ") #this line is only needed in windows as far as this is written
+      ```
+
+   This will install all necessary packages for you to be able to run the scripts and everything should work out of the box.
+   NOTE  when you install julia in windows keep track where your julia.exe file is going to be located. `C:\\path-to-julia-exe\julia.exe`. Save this as you might need it later.
+
+## The code has three main parts as of now and one initial part of config:
+
+0. edit configuration file to define the options to run
 1. read and generate data to be transformed into wavelets.
 2. use the given data/wavelets to compute pairs of CMI TE using julia package
 3. plot the results of the CMI TE computations
 
-# the steps to run the code
+## Steps to run the code
 
-1. place the data to be analized in ./data/input
-2. got to the script ./scripts/wavelet_warping_calls.py and read the instructions there
+1. place the data to be analized in ./data/input, keep gut track of the names of the files
+
+
+2. the main script is in ./scripts/main.py go there and read the instructions there
    IMPORTANT the most significant things in this script are 
       1 select the 'frequencies'
       2 make sure the 'units' and signal are 
@@ -48,7 +74,7 @@ Associated with these parts there are the corresponding plotting and data genera
    - 1st provide a univaluated signal, chose one function from the provide_signals script
       1 chose a tag in the dictionary name_source
       2 if no tag exists, create it
-      3 make sure the amplitude of the signal is renormalized to values vetween -2 to 2
+      3 make sure the amplitude of the signal is renormalized to values between -2 to 2
 
    - 2nd settle in the units of the signal by choosing a value for sampling_dt
       1 edit the 'unit' variable with a string bearing the physical unit
@@ -69,6 +95,16 @@ Associated with these parts there are the corresponding plotting and data genera
       wav_method = 'pywt' -> wc.pywt_compute_wavelets(...)
       wav_method = 'niko' -> wc.niko_compute_wavelets(...)
 
+2. both `python` and `julia` commands have to be in the main path of executables for them to be run out of shell/terminal/power shell (in windows). That is system specific how to do that. Google it for mac, linux, windows. 
+
+   - PYTHON to run python scripts from python shell or spider or jupiter  (common in Windows) you need to do so with this instruction 
+      `exec(open("./scripts/main.py").read())`
+
+   - JULIA in windows I could not make the `julia` comand work from shell, so when you install julia keep track where your julia.exe file is located. Then to run the julia scripts do either  
+      1. in scripts/main.py edit the line with `bashCommand = ...` and put 
+      `bashCommand = "C:/path-to-julia-exe/julia.exe --project=. ./scripts/compute_TE.jl ./confs/config_embeding_char.ini"`  
+      2. you can directly run the julia scrip from bash shell or julia shell, in julia is `julia> /path/to/julia_script-name.jl`
+
 
 3. Set the config file at ./confs/config_embeding_char.ini
  there set 
@@ -84,26 +120,30 @@ Associated with these parts there are the corresponding plotting and data genera
    pha_amp_more = _pha,_amp
 
    [emb_par]
-   bins = 150
-   max_tau = 10
-   jump_tau = 5
-   embeding_dimension = 2,1,1,1,1
+   bins = 150 #binning for the estimator.
+   max_tau = 10 #maximum delay of the embedding
+   jump_tau = 5 #steps on the delay, minimum is 1, max is max_tau
+   embeding_dimension = 2,1,1,1,1 #the number of dimensions and their arrangementm usually the 2 main options are  2,1,1,1,1 (5D), 2,1,1(3D)
    period_range = 6,84
 
    [prob_est]
-   name_tag = Prob-est_VisFreq_b
-   prob_kind = VisFreq
+   name_tag = Prob-est_VisFreq_b #tag that defines the prob estimator CHANGE WITH APPROPIATE NAME! 
+   prob_kind = VisFreq #kind of probability estimator, it can be `knn` `VisFreq`
 
    [surrogates]
-   surr_kind = circular
-   surr_num = 11
+   surr_kind = circular #kind of surrogate, only circular allowed as now
+   surr_num = 11 # number of surrogates generated
 
-4.  at ./confs/config_embeding_char.ini  select or unselect the lines 
+4. go to script `./src/provide_signals.py` and add a function with reads the data yiu are providing. It does not natter the format, but it shall return two numpy arrays of equal length, one with ordered sequence (time) and the data sequence. The existing functions might work, but you need to change the name of the datafile to be readed in the `./scripts/main.py`
+
+4.  at ./scripts/main.py  quote or unquote or unselect the lines 
       bashCommand = "julia --project=. ./scripts/compute_TE.jl ./confs/config_embeding_char.ini"
       process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
       output, error = process.communicate()
 
    in order to run or not the julia code.
+
+5. to run the python script
 
 
 5. at ./scripts/plot_TE-corelation.py plot the apropiate plots nedded.
@@ -112,25 +152,6 @@ Associated with these parts there are the corresponding plotting and data genera
 
 
 
-
-### Prerequisites
-
-Python 3, Julia 1.5 or above
-
-### Installing
-
-For the julia part of this project
-
-0. Download this code base. Notice that raw data are typically not included in the
-   git-history and may need to be downloaded independently.
-1. Open a Julia console and do:
-   ```
-   julia> using Pkg
-   julia> Pkg.activate("path/to/this/project")
-   julia> Pkg.instantiate()
-   ```
-
-This will install all necessary packages for you to be able to run the scripts and everything should work out of the box.
 
 
 
