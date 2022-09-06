@@ -2,7 +2,6 @@ import configparser
 
 
 
-
 def ini_conf_file(wavelet):
 
 

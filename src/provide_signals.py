@@ -9,13 +9,13 @@ import src.surogates as srg
 import pandas as pd
 import numpy as np
 from numpy import random as rn, size
-from scipy import signal
-from scipy import io
+#from scipy import signal
+#from scipy import io
 import random as rd
 import calendar
 from dateutil.parser import parse
+#import scipy
 
-import scipy.io
 
 def transform_matlab_data():
 
@@ -40,7 +40,7 @@ def transform_matlab_data():
     #df_train = pd.DataFrame(data, columns=columns)
 
     #print(df_train)
-    
+
 def noise_signal(length_n):
     '''Create noise signals'''
 
@@ -154,6 +154,32 @@ def create_signal(frequencies, amplitudes, t, noise = False, gauss = False):
     return t, sig
 
 
+def create_jiang_signal(frequencies, amplitudes, t, noise = False, gauss = False):
+    ''' 
+    return  a signal as the sum of cosines of different frequencies and corresponding amplitudes provided
+    
+    :param *kwargs:
+        noise: if true noise is added, default is False
+        gauss: if true a gaussian in the central period is added, default is False
+        
+    '''
+    
+    sig_cos = []
+    sig_gauss =  10*np.real(np.exp(-0.001*(t-len(t)/2)**2))#*np.exp(1j*2*np.pi*2*(t-0.4)))
+    sig_noise = rn.normal(0,0.25, size=(len(t)))
+    sig = np.zeros(len(t))
+
+    for i, f in enumerate(frequencies):
+        sig_cos.append( np.cos( 2*np.pi * f * t) )  #+ signal.gausspulse(t - 0.4, fc=2)
+        sig += amplitudes[i]*sig_cos[i]
+    
+    if noise: sig += sig_noise
+    if gauss: sig += sig_gauss
+    
+    return t, sig
+
+
+
 
 def multiplicative_coupling(par_sig = signal_properties):
     '''
@@ -197,7 +223,7 @@ def create_victor_signal(num_segments,  base_length, delay = 2, amp_min = 10,  f
         t_freq=[]
         for i in range(num_segments):
             t_aux = np.arange( 0, 1.0, 1.0/int( np.round(base_length*dur[i], 2) ) )
-            signal_segment = amp_sequence[i]*(np.sin(2*np.pi*freq_sequence[i]*t_aux + 1.5*np.pi) +1.0 )#
+            signal_segment = amp_sequence[i]*(np.sin(2*np.pi*freq_sequence[i]*t_aux + 1.5*np.pi) + 1.0 )#
             t_freq.append(t_aux + i)
             sig_ph.append(signal_segment)
 
@@ -280,6 +306,106 @@ def create_victor_signal(num_segments,  base_length, delay = 2, amp_min = 10,  f
 #sig = create_signal(frequencies, amplitudes, t, gauss = False )#
 
 
+def create_jiang_signal(num_segments,  base_length, delay = 2, amp_min = 10,  factor = 0.04, norm = 0.08, round_int = 3):
+
+    '''
+    Create one signal with CFC between 10 & 70 Hz
+    :param sig_length: number of units of the signal
+    :param directionality: imposes a directionality in the link:
+       directionality = 0; No directionality
+       directionality = 1; Directionality from 10Hz to 70Hz
+       directionality = 2; Directionality from 70Hz to 10Hz
+    :param sig_length:  signal length
+    :param base_length: 8 to 12 times the maximum length of a segment, depends on norm and factor
+    :param duration: duration of each segment
+    '''
+    
+    dur = np.round(rn.rand(num_segments)*factor + norm, round_int) #duration of each temporal segment of the signal 
+    freq_sequence = 1./dur #frequency of each sequence
+    amp_sequence = rn.uniform(-1, 1, num_segments) + amp_min #amplitude of each sequence 
+    print('dur, amplitudes sequence', dur, amp_sequence)
+
+    def alpha_signal():
+        '''Create the phase signal [~10 Hz]'''
+        sig_ph=[]
+        t_freq=[]
+        for i in range(num_segments):
+            t_aux = np.arange( 0, 1.0, 1.0/int( np.round(base_length*dur[i], 2) ) )
+            signal_segment = amp_sequence[i]*(np.sin(2*np.pi*freq_sequence[i]*t_aux + 1.5*np.pi) + 1.0 )#
+            t_freq.append(t_aux + i)
+            sig_ph.append(signal_segment)
+
+        signal_array = np.array([item for sublist in sig_ph for item in sublist])
+        time_array = np.array([item for sublist in t_freq for item in sublist])
+
+        plt.plot(time_array, signal_array)
+        return time_array, signal_array 
+
+    def gamma_signal(f_amp = 70, amplitude = 10, c = 6):    
+        '''Create the amplitude signal [~70 Hz]'''
+
+        c = 6
+        t = np.arange( 0, t_freq[-1], t_freq[-1]/len(t_freq) ) 
+        sig_amp = []
+
+        for i in range(len(t_freq)):
+            aux1 = 1 - (1 / (1 + np.exp(-amplitude*(sig_ph[i] - c) )) )  
+            aux2 = (np.sin(2*np.pi*f_amp*t[i]) + 1)
+            sig_amp.append( aux1 * aux2 ) 
+
+        #plt.plot(t, sig_amp)
+        return np.array( sig_amp )
+
+
+
+    def directionality_signal(delay, white = True, pink = True):
+        '''
+        Impose directionality, delay one signal X units respect to the other
+        
+        :param *kwargs:
+            delay: delay in system units
+            white: sum white noise to the signal
+            pink: sum pink noise to the signal
+        '''
+
+        #no coupled sum of the signals
+        end = len(t_freq) - 1 
+        no_coupling_sig = sig_ph + sig_amp
+
+        #signals summed with delay, amp to phase
+        time_delay_amp_to_phas = t_freq[delay:end]
+        sig_ph_del = sig_ph[delay:end]
+        sig_amp_del = sig_amp[:end-delay]
+        amp_to_phase_sig = sig_ph_del + sig_amp_del
+
+        print('end', end, 'delay', delay)
+
+        #signals summed with delay, phase to amp
+        time_delay_phas_to_amp = t_freq[delay:end]
+        sig_ph_del2 = sig_ph[:end-delay]
+        sig_amp_del2 = sig_amp[delay:end]
+        phas_to_amp_sig = sig_ph_del2 + sig_amp_del2
+
+        if white: 
+            no_coupling_sig = no_coupling_sig + sig_white_n
+            amp_to_phase_sig =  amp_to_phase_sig + sig_white_n[delay:end]
+            phas_to_amp_sig =  phas_to_amp_sig + sig_white_n[:end-delay+1]
+
+        if pink:
+            no_coupling_sig = no_coupling_sig + sig_pink_n 
+            amp_to_phase_sig = amp_to_phase_sig + sig_pink_n[delay:end]
+            phas_to_amp_sig = phas_to_amp_sig + sig_pink_n[:end-delay+1]
+
+        return no_coupling_sig , amp_to_phase_sig, phas_to_amp_sig, time_delay_amp_to_phas, time_delay_phas_to_amp
+        
+    t_freq, sig_ph = phase_signal()
+    sig_amp = amplitude_signal()
+    sig_white_n = noise_signal(len(t_freq))
+    sig_pink_n = pink_noise_signal(len(t_freq))
+    no_coupling_sig , amp_to_phase_sig, phas_to_amp_sig, time_delay_amp_to_phas, time_delay_phas_to_amp = directionality_signal(delay, white = False, pink = False)
+    return t_freq, no_coupling_sig , amp_to_phase_sig, phas_to_amp_sig, time_delay_amp_to_phas, time_delay_phas_to_amp
+
+
 def plot_delayed_undelayed():
 
     '''ploting the cuplend and uncoupled sinthetic signals '''
@@ -307,18 +433,18 @@ def plot_delayed_undelayed():
 
 
 #victor_sig = io.loadmat('./data/exp_pro/matlab_victor_sin_data/signal_alpha2gamma.mat')
-transform_matlab_data()
+#transform_matlab_data()
 
-'''compute delay signal
+'''compute delay signal'''
 num_segments = 3#100
 base_length = 11111
 delay = 50
 
 t_freq, no_coupling_sig , amp_to_phase_sig, phas_to_amp_sig, time_delay_amp_to_phas, time_delay_phas_to_amp = create_victor_signal(num_segments,  base_length, delay)
 plot_delayed_undelayed()
-plot_victor_sig_file()
+#plot_victor_sig_file()
 plt.show()
-'''
+
 
 
 

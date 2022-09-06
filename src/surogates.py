@@ -1,7 +1,7 @@
 from numpy import random as rd
 import random as rd
 import numpy as np
-from pyunicorn.timeseries import surrogates as su
+#from pyunicorn.timeseries import surrogates as su
 
 
 
@@ -44,7 +44,7 @@ def many_surrogates(name, data, root = 'surr_', min_shift=1, n_surrogates = 111,
     np.save(name_file, surrogates)
 
 data = np.array([np.arange(1,1111,4), np.arange(1,1111,4)])
-sur = su.Surrogates(data.astype('FLOATTYPE_t'))
-twin_sur = sur.twin_surrogates(data, dimension = 1, delay = 33, threshold = 4,
-                        min_dist=7)  
-print('im doing someting >))))', su)
+#sur = su.Surrogates(data.astype('FLOATTYPE_t'))
+#twin_sur = sur.twin_surrogates(data, dimension = 1, delay = 33, threshold = 4,
+#                        min_dist=7)  
+#print('im doing someting >))))', su)
