@@ -126,33 +126,36 @@ def read_plot_victor_compludograms_by_Zvalue(name, fig, axes, maxZs):
  
     #print('shape', np.shape(shaped_data), shaped_data.shape())
 
-    more_data =np.empty((6, 3))
+    more_data_x =np.empty((6, 24 ))
+    more_data_y =np.empty((6, 43 ))
+    more_data_psi =np.empty((6, 43, 24 ))
 
-    num = np.arange(6)
+    num = np.arange(3)
+
+
 
     for i, n in zip(num, data):
-        print(num, n)
-        more_data[i][0] = data[n]['x']
-        more_data[i][1]= data[n]['y']
-        more_data[i][2] = data[n]['PSI']
-        more_data[2*i][0] = data[n]['x']
-        more_data[2*i][1]= data[n]['y']
-        more_data[2*i][2] = data[n]['PSI']
+        print('nanana',i*2, i*2+1, n)
+        more_data_x[i*2] =data[n]['x']
+        more_data_y[i*2]= data[n]['y']
+        more_data_psi[i*2] = data[n]['PSI']
+        more_data_x[2*i+1] = data[n]['x']
+        more_data_y[2*i+1] = data[n]['y']
+        more_data_psi[2*i+1] = data[n]['PSI']
+    print('mmmm', more_data_x)
+    
 
     
-    print('shape', np.shape(more_data))
-
     filter = 22
-    for key, n, maxZ in zip( axes, more_data, maxZs):
+    maxZs = [3, 3, 4.5, 4.5, 3, 3]
+    for key, x, y, psi, maxZ in zip( axes, more_data_x, more_data_y, more_data_psi, maxZs):
         
         print('nnnn', n)
         print ('loop ', key)
-        dataX = data[n][0]
-        dataY = data[n][1]
-        dataZ = data[n][2]
-        print('lenennelen', len(dataX ))
-        print('lenennelen', len(dataZ ))
-
+        dataX = x
+        dataY = y
+        dataZ = psi
+             
         Zscore  =  Z_scoring(dataZ)
         #,np.ma.masked_where(Zscore < 1.0, Zscore)
         #maxZ = np.max(dataZ)
@@ -178,30 +181,36 @@ def read_plot_victor_compludograms_by_Zvalue(name, fig, axes, maxZs):
             
             print ('ifffff ', key)
             filtered_z = scipy.ndimage.zoom(Zscore, filter)
-            masked_array = np.ma.masked_where( (filtered_z > -cut) , filtered_z)
+            masked_array = np.ma.masked_where( (filtered_z < cut) , filtered_z)
             cutedZ = masked_array[:, cutXlow:cutXhigh]
-            cutedZ[0, 0] = np.min(cutedZ )
-            im = plot_victor_como(axes[key], axeXpoints[cutXlow:cutXhigh], axeYpoints, -cutedZ )
+            cutedZ[0, 0] = maxZ#np.min(cutedZ )
+            cutedZ[0, 3] = 2.0
+            cutedZ[0, 4] = maxZ#np.max(cutedZ )
+            im = plot_victor_como(axes[key], axeXpoints[cutXlow:cutXhigh], axeYpoints, cutedZ )
         
         if 'right' in key:
             filtered_z = scipy.ndimage.zoom(Zscore, filter)
-            masked_array = np.ma.masked_where( (filtered_z < cut) , filtered_z)
-            cutedZ = masked_array[:, cutXlow:cutXhigh]
-            #cutedZ[0, 1] = np.max(cutedZ )
+            masked_array = np.ma.masked_where( (filtered_z > -cut) , filtered_z)
+            
+            cutedZ = -masked_array[:, cutXlow:cutXhigh]
+            cutedZ[0, 1] = maxZ#np.max(cutedZ )
+            cutedZ[0, 3] = 2.0
             im = plot_victor_como(axes[key], axeXpoints[cutXlow:cutXhigh], axeYpoints, cutedZ )
-
+            divider = make_axes_locatable(axes[key])
+            cax = divider.append_axes('right', size='5%', pad=0.05)
+            fig.colorbar(im, cax=cax, orientation='vertical' )
 
 
         
 
-        divider = make_axes_locatable(axes[key])
-        cax = divider.append_axes('right', size='5%', pad=0.05)
-        fig.colorbar(im, cax=cax, orientation='vertical' )
+        #divider = make_axes_locatable(axes[key])
+        #cax = divider.append_axes('right', size='5%', pad=0.05)
+        
            
         axes[key].set_transform(axes[key].transAxes)
         axes[key].set_yticks([])
     
-    prepare_figure_victor_como(fig, axes)    
+    #prepare_figure_victor_como(fig, axes)    
     plt.savefig(pth3+"fig3_victor_como_Z-score_smuth22.svg")
 
 
@@ -256,7 +265,7 @@ def read_plot_all_victor_compludograms(name, fig, axes, maxZs):
 def plot_victor_como(ax, dataX, dataY, dataZ):
 
    
-    cmap = plt.get_cmap('PRGn')
+    cmap = plt.get_cmap('YlGn')#'PRGn'
     cmap.set_bad(color='white')
    
     im = ax.contourf( dataX, dataY,  dataZ,
@@ -333,7 +342,9 @@ hight = 7.8
 
 '''FIGURE Comoludogram Victor'''
 '''3x3 Victor'''
-filename_mat = "../../Desktop/Dropbox/transfer_inormation_prague/data/imput/CFD_rats/CFD_S10.mat"
+#filename_mat = "../../Desktop/Dropbox/transfer_inormation_prague/data/imput/CFD_rats/CFD_S10.mat"
+
+filename_mat = "../../Desktop/Dropbox/transfer_inormation_prague/data/imput/CFD_rats/CFD_65536samples.mat"
 
 mossaic_keys = [['upper left', 'upper right'],
                 ['middle left', 'middle right'],
@@ -349,9 +360,9 @@ read_plot_victor_compludograms_by_Zvalue(filename_mat, fig, axes, maxZs)
 mossaic_keys = [['upper'],
                 ['middle'],
                 ['lower']]
-#fig, axes = plt.subplot_mosaic(mossaic_keys, sharex=True, sharey=True,
-#                              figsize=(3.1, hight), gridspec_kw={'hspace': 0, 'wspace': 0})
-#read_plot_all_victor_compludograms(filename_mat, fig, axes, maxZs)
+fig, axes = plt.subplot_mosaic(mossaic_keys, sharex=True, sharey=True,
+                              figsize=(3.1, hight), gridspec_kw={'hspace': 0, 'wspace': 0})
+read_plot_all_victor_compludograms(filename_mat, fig, axes, maxZs)
 
 
 
