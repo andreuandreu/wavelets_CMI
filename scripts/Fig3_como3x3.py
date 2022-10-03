@@ -121,17 +121,37 @@ def read_plot_all_milan_compludograms(data_names, fig, axes):
 def read_plot_victor_compludograms_by_Zvalue(name, fig, axes, maxZs):
 
     data = rmf.read_mat_victor(name)
-    #data = [data, data]
+    #more_data = np.append(data, data)
+    #shaped_data = more_data.reshape(6)
+ 
+    #print('shape', np.shape(shaped_data), shaped_data.shape())
 
-    print('shape', np.shape(data), type (data))
+    more_data =np.zeros(6, 3)
+
+
+
+    for i, n in enumerate(data):
+
+        more_data[i, 0] = data[n]['x']
+        more_data[i, 1]= data[n]['y']
+        more_data[i, 2] = data[n]['PSI']
+        more_data[2*i, 0] = data[n]['x']
+        more_data[2*i, 1]= data[n]['y']
+        more_data[2*i, 2] = data[n]['PSI']
+
+    
+    print('shape', np.shape(more_data))
 
     filter = 22
-    for key, n, maxZ in zip( axes, data, maxZs):
+    for key, n, maxZ in zip( axes, more_data, maxZs):
         
         print('nnnn', n)
+        print ('loop ', key)
         dataX = data[n]['x']
         dataY = data[n]['y']
         dataZ = data[n]['PSI']
+        print('lenennelen', len(dataX ))
+        print('lenennelen', len(dataZ ))
 
         Zscore  =  Z_scoring(dataZ)
         #,np.ma.masked_where(Zscore < 1.0, Zscore)
@@ -156,6 +176,7 @@ def read_plot_victor_compludograms_by_Zvalue(name, fig, axes, maxZs):
 
         if 'left' in key:
             
+            print ('ifffff ', key)
             filtered_z = scipy.ndimage.zoom(Zscore, filter)
             masked_array = np.ma.masked_where( (filtered_z > -cut) , filtered_z)
             cutedZ = masked_array[:, cutXlow:cutXhigh]
@@ -305,24 +326,32 @@ mossaic_keys = [['upper left', 'upper right'],
                 ['lower left', 'lower right']]
 
 hight = 7.8
-fig, axes = plt.subplot_mosaic(mossaic_keys, sharex=True, sharey=True,
-                              figsize=(6.1, hight), gridspec_kw={'hspace': 0, 'wspace': 0})
-maxZs = read_plot_all_milan_compludograms(data_names, fig, axes)
+#fig, axes = plt.subplot_mosaic(mossaic_keys, sharex=True, sharey=True,
+#                              figsize=(6.1, hight), gridspec_kw={'hspace': 0, 'wspace': 0})
+#maxZs = read_plot_all_milan_compludograms(data_names, fig, axes)
 
 
 '''FIGURE Comoludogram Victor'''
+'''3x3 Victor'''
 filename_mat = "../../Desktop/Dropbox/transfer_inormation_prague/data/imput/CFD_rats/CFD_S10.mat"
 
+mossaic_keys = [['upper left', 'upper right'],
+                ['middle left', 'middle right'],
+                ['lower left', 'lower right']]
+
+maxZs = [7,-3,7,-3,7,-3]
 fig, axes = plt.subplot_mosaic(mossaic_keys, sharex=True, sharey=True,
                               figsize=(6.1, hight), gridspec_kw={'hspace': 0, 'wspace': 0})
 read_plot_victor_compludograms_by_Zvalue(filename_mat, fig, axes, maxZs)
 
+'''3x1 Victor'''
+
 mossaic_keys = [['upper'],
                 ['middle'],
                 ['lower']]
-fig, axes = plt.subplot_mosaic(mossaic_keys, sharex=True, sharey=True,
-                              figsize=(3.1, hight), gridspec_kw={'hspace': 0, 'wspace': 0})
-read_plot_all_victor_compludograms(filename_mat, fig, axes, maxZs)
+#fig, axes = plt.subplot_mosaic(mossaic_keys, sharex=True, sharey=True,
+#                              figsize=(3.1, hight), gridspec_kw={'hspace': 0, 'wspace': 0})
+#read_plot_all_victor_compludograms(filename_mat, fig, axes, maxZs)
 
 
 

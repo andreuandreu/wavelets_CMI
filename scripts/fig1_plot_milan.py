@@ -152,13 +152,15 @@ def prepare_figue_lag(fig, axes):
     fig.text(0.65, 0.9, 'MI', va='center', fontsize=13)
 
     fig.text(0.5, 0.04, 'Lag[su]', va='center', fontsize=11)
-    fig.text(0.022, 0.5, 'I[nu]', va='center', rotation='vertical', fontsize=11)  
+    fig.text(0.03, 0.5, 'I[nu]', va='center', rotation='vertical', fontsize=11)  
 
-    #fig.text(0.5, 0.04, '8Hz, HF amp 80 Hz', va='center', fontsize=11)
-    #fig.text(0.5, 0.04, '8Hz, HF amp 100 Hz', va='center', fontsize=11)
     #IM-IC LF 8Hz, HF 100 HZ
-    #fig.text(0.02, 0.2, 'PP-IC', va='center', rotation='vertical', fontsize=13)
-    #fig.text(0.02, 0.5, 'Im-IC', va='center', rotation='vertical', fontsize=13)
+    #fig.text(0.9, 0.3, 'LF-HF 8-100Hz', va='center', rotation=270, fontsize=10)
+    #fig.text(0.9, 0.72, 'LF-HF 8-80Hz', va='center', rotation=270, fontsize=10)
+
+    fig.text(0.905, 0.72, r' $\omega_1$ = 1.015', va='center', rotation=270, fontsize=10)
+    fig.text(0.905, 0.3, r' $\omega_1$ = 0.985', va='center', rotation=270, fontsize=10)
+
 
 
 #x10 v1 s1 phAA 12k1LX3ct1 kL4 shi1 su30 v1, 2, 3 variables (Sch-IC, Im-IC, PP-IC) 
