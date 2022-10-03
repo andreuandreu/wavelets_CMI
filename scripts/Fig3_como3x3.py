@@ -126,18 +126,18 @@ def read_plot_victor_compludograms_by_Zvalue(name, fig, axes, maxZs):
  
     #print('shape', np.shape(shaped_data), shaped_data.shape())
 
-    more_data =np.zeros(6, 3)
+    more_data =np.empty((6, 3))
 
+    num = np.arange(6)
 
-
-    for i, n in enumerate(data):
-
-        more_data[i, 0] = data[n]['x']
-        more_data[i, 1]= data[n]['y']
-        more_data[i, 2] = data[n]['PSI']
-        more_data[2*i, 0] = data[n]['x']
-        more_data[2*i, 1]= data[n]['y']
-        more_data[2*i, 2] = data[n]['PSI']
+    for i, n in zip(num, data):
+        print(num, n)
+        more_data[i][0] = data[n]['x']
+        more_data[i][1]= data[n]['y']
+        more_data[i][2] = data[n]['PSI']
+        more_data[2*i][0] = data[n]['x']
+        more_data[2*i][1]= data[n]['y']
+        more_data[2*i][2] = data[n]['PSI']
 
     
     print('shape', np.shape(more_data))
@@ -147,9 +147,9 @@ def read_plot_victor_compludograms_by_Zvalue(name, fig, axes, maxZs):
         
         print('nnnn', n)
         print ('loop ', key)
-        dataX = data[n]['x']
-        dataY = data[n]['y']
-        dataZ = data[n]['PSI']
+        dataX = data[n][0]
+        dataY = data[n][1]
+        dataZ = data[n][2]
         print('lenennelen', len(dataX ))
         print('lenennelen', len(dataZ ))
 
