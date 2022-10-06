@@ -147,7 +147,7 @@ def read_plot_victor_compludograms_by_Zvalue(name, fig, axes, maxZs):
 
     
     filter = 22
-    maxZs = [3, 3, 4.5, 4.5, 3, 3]
+    maxZs = [4., 4., 4., 4., 4., 4.]
     for key, x, y, psi, maxZ in zip( axes, more_data_x, more_data_y, more_data_psi, maxZs):
         
         print('nnnn', n)
@@ -211,6 +211,7 @@ def read_plot_victor_compludograms_by_Zvalue(name, fig, axes, maxZs):
         axes[key].set_yticks([])
     
     #prepare_figure_victor_como(fig, axes)    
+    prepare_figure_comoludogram(fig, axes)
     plt.savefig(pth3+"fig3_victor_como_Z-score_smuth22.svg")
 
 
@@ -265,11 +266,11 @@ def read_plot_all_victor_compludograms(name, fig, axes, maxZs):
 def plot_victor_como(ax, dataX, dataY, dataZ):
 
    
-    cmap = plt.get_cmap('YlGn')#'PRGn'
+    cmap = plt.get_cmap('BuGn')#'PRGn''YlGn'
     cmap.set_bad(color='white')
    
     im = ax.contourf( dataX, dataY,  dataZ,
-                      extend='both', cmap=cmap)#contourlevels, 
+                      extend='both', cmap=cmap, levels = 4)#, 
 
     return(im)
         
