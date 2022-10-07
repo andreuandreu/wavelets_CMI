@@ -1,25 +1,27 @@
 import sys
-sys.path.append('.')
+
+sys.path.append(".")
 # array object and fast numerics
 import numpy as np
 from numpy import random
 
-#sys.path.append(".")
+# sys.path.append(".")
 import pyximport
-pyximport.install()#._ext/
-#import direnv
+
+pyximport.install()  # ._ext/
+# import direnv
 
 
-#from numerics import _twins_s, _twin_surrogates
-#from numerics import  
+# from numerics import _twins_s, _twin_surrogates
+# from numerics import
 print("In module products sys.path[0], __package__ ==", sys.path[0], __package__)
-#from ..utils import progressbar
+# from ..utils import progressbar
 from src._ext.numerics import _twins_s, _twin_surrogates
-#from ._ext import numerics
+
+# from ._ext import numerics
 # easy progress bar handling
 
 
-    
 class Surrogates:
 
     """
@@ -29,45 +31,45 @@ class Surrogates:
     measures using these surrogates.
     More information on time series surrogates can be found in [Schreiber2000]_
     and [Kantz2006]_.
-    """    
-    
+    """
+
     # FIXME: I(wb) included the line
     # dimension = embedding_array.shape[2]
     # whose missing caused an error. I can't guarantee if it is correct.
 
     def embed_time_series_array(self, time_series_array, dimension, delay):
-            """
-            Return a :index:`delay embedding` of all time series.
-            .. note::
-            Only works for scalar time series!
-            **Example:**
-            >>> ts = Surrogates.SmallTestData().original_data
-            >>> Surrogates.SmallTestData().embed_time_series_array(
-            ...     time_series_array=ts, dimension=3, delay=2)[0,:6,:]
-            array([[ 0.        ,  0.61464833,  1.14988147],
-                [ 0.31244015,  0.89680225,  1.3660254 ],
-                [ 0.61464833,  1.14988147,  1.53884177],
-                [ 0.89680225,  1.3660254 ,  1.6636525 ],
-                [ 1.14988147,  1.53884177,  1.73766672],
-                [ 1.3660254 ,  1.6636525 ,  1.76007351]])
+        """
+        Return a :index:`delay embedding` of all time series.
+        .. note::
+        Only works for scalar time series!
+        **Example:**
+        >>> ts = Surrogates.SmallTestData().original_data
+        >>> Surrogates.SmallTestData().embed_time_series_array(
+        ...     time_series_array=ts, dimension=3, delay=2)[0,:6,:]
+        array([[ 0.        ,  0.61464833,  1.14988147],
+            [ 0.31244015,  0.89680225,  1.3660254 ],
+            [ 0.61464833,  1.14988147,  1.53884177],
+            [ 0.89680225,  1.3660254 ,  1.6636525 ],
+            [ 1.14988147,  1.53884177,  1.73766672],
+            [ 1.3660254 ,  1.6636525 ,  1.76007351]])
 
-            :type time_series_array: 2D array [index, time]
-            :arg time_series_array: The time series array to be normalized.
-            :arg int dimension: The embedding dimension.
-            :arg int delay: The embedding delay.
-            :rtype: 3D array [index, time, dimension]
-            :return: the embedded time series.
-            """
-            if self.silence_level <= 1:
-                print(f"Embedding all time series in dimension {dimension} "
-                    f"and with lag {delay} ...")
-            (N, n_time) = time_series_array.shape
+        :type time_series_array: 2D array [index, time]
+        :arg time_series_array: The time series array to be normalized.
+        :arg int dimension: The embedding dimension.
+        :arg int delay: The embedding delay.
+        :rtype: 3D array [index, time, dimension]
+        :return: the embedded time series.
+        """
+        if self.silence_level <= 1:
+            print(
+                f"Embedding all time series in dimension {dimension} "
+                f"and with lag {delay} ..."
+            )
+        (N, n_time) = time_series_array.shape
 
-            embedding = np.empty((N, n_time - (dimension - 1)*delay, dimension))
+        embedding = np.empty((N, n_time - (dimension - 1) * delay, dimension))
 
-
-            return embedding
-
+        return embedding
 
     def twins(self, embedding_array, threshold, min_dist=7):
         """
@@ -99,9 +101,17 @@ class Surrogates:
         #  Initialize array to store the number of neighbors for each sample
         nR = np.empty(n_time)
 
-        _twins_s(N, n_time, dimension, threshold, min_dist,
-                    embedding_array.copy(order='c'), R.copy(order='c'),
-                    nR.copy(order='c'), twins)
+        _twins_s(
+            N,
+            n_time,
+            dimension,
+            threshold,
+            min_dist,
+            embedding_array.copy(order="c"),
+            R.copy(order="c"),
+            nR.copy(order="c"),
+            twins,
+        )
 
         return twins
 
@@ -109,9 +119,7 @@ class Surrogates:
     #  Define methods to generate sets of surrogate time series
     #
 
-
-    def twin_surrogates(self, original_data, dimension, delay, threshold,
-                        min_dist=7):
+    def twin_surrogates(self, original_data, dimension, delay, threshold, min_dist=7):
         """
         Return surrogates using the twin surrogate method.
         Scalar twin surrogates are created by isolating the first component
@@ -125,7 +133,7 @@ class Surrogates:
         generation of several surrogates for each time series. Hence,
         :meth:`clear_cache` has to be called before generating twin surrogates
         from a different set of time series!
-        
+
         :type original_data: 2D array [index, time]
         :arg original_data: The original time series.
         :arg int dimension: The embedding dimension.
@@ -145,20 +153,18 @@ class Surrogates:
         #  3. Reconstruct one-dimensional twin surrogate time series
 
         (N, n_time) = original_data.shape
-        n_time = n_time - (dimension-1)*delay
+        n_time = n_time - (dimension - 1) * delay
 
         #  Make sure that twins are calculated only once
         if self._twins_cached:
             twins = self._twins
         else:
-            embedding = self.embed_time_series_array(original_data,
-                                                        dimension, delay)
+            embedding = self.embed_time_series_array(original_data, dimension, delay)
             twins = self.twins(embedding, threshold, min_dist)
             self._twins = twins
             self._twins_cached = True
 
-        return _twin_surrogates(N, n_time, twins,
-                                original_data.copy(order='c'))
+        return _twin_surrogates(N, n_time, twins, original_data.copy(order="c"))
 
     #
     #  Defines methods to generate correlation measure matrices based on
