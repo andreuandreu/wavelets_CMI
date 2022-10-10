@@ -33,7 +33,7 @@ def Z_scoring(x):
     return Zscore
 
 
-def prepare_figure_comoludogram(fig, axes):
+def prepare_figure_milan_como(fig, axes):
 
     left = 0.01
     width = 0.7
@@ -45,17 +45,27 @@ def prepare_figure_comoludogram(fig, axes):
     fig.text(0.86, 0.9, "Z-score", va="center", fontsize=11)
 
     fig.text(0.45, 0.04, "Pha[Hz]", va="center", fontsize=11)
-    fig.text(0.048, 0.5, "Amp[Hz]", va="center", rotation="vertical", fontsize=11)
+    fig.text(0.038, 0.5, "Amp[Hz]", va="center", rotation="vertical", fontsize=11)
 
-    fig.text(0.25, 0.9, r"Pha $\rightarrow$ Amp", va="center", fontsize=13)
-    fig.text(0.65, 0.9, r"Amp $\rightarrow$ Pha", va="center", fontsize=13)
+    fig.text(0.15, 0.9, r"Pha $\rightarrow$ Amp (PAC)", va="center", fontsize=13)
+    fig.text(0.55, 0.9, r"Amp $\rightarrow$ Pha (APC)", va="center", fontsize=13)
 
-    fig.text(0.015, 0.2, "PP-IC", va="center", rotation="vertical", fontsize=13)
-    fig.text(0.015, 0.5, "Im-IC", va="center", rotation="vertical", fontsize=13)
-    fig.text(0.015, 0.76, "Sch-IC", va="center", rotation="vertical", fontsize=13)
+    fig.text(0.003, 0.2, "PP-IC", va="center", rotation="vertical", fontsize=13)
+    fig.text(0.003, 0.5, "Im-IC", va="center", rotation="vertical", fontsize=13)
+    fig.text(0.003, 0.76, "Sch-IC", va="center", rotation="vertical", fontsize=13)
 
 
-def prepare_figure_victor_como(fig, axes):
+def prepare_figure_vic_como3x2(fig, axes):
+
+    fig.text(0.86, 0.9, "Z-score", va="center", fontsize=11)
+
+    fig.text(0.45, 0.04, "Pha[Hz]", va="center", fontsize=11)
+
+    fig.text(0.15, 0.9, r"Pha $\rightarrow$ Amp (PAC)", va="center", fontsize=13)
+    fig.text(0.55, 0.9, r"Amp $\rightarrow$ Pha (APC)", va="center", fontsize=13)
+
+
+def prepare_figure_victor_como3x1(fig, axes):
 
     fig.text(0.85, 0.92, "Z-score", va="center", fontsize=11)
     fig.text(0.85, 0.89, "PAC", va="center", fontsize=11)
@@ -118,7 +128,7 @@ def read_plot_all_milan_compludograms(data_names, fig, axes):
         im = plot_milan_xyz(axes[key], dataX, dataY, dataZ)
         axes[key].set_transform(axes[key].transAxes)
 
-    prepare_figure_comoludogram(fig, axes)
+    prepare_figure_milan_como(fig, axes)
     plt.savefig(pth3 + "fig3_milan_como_Z-score_smuth12.svg")
 
     return maxZs
@@ -154,8 +164,6 @@ def read_plot_victor_compludograms_by_Zvalue(name, fig, axes, maxZs):
         axes, more_data_x, more_data_y, more_data_psi, maxZs
     ):
 
-        print("nnnn", n)
-        print("loop ", key)
         dataX = x
         dataY = y
         dataZ = psi
@@ -181,8 +189,6 @@ def read_plot_victor_compludograms_by_Zvalue(name, fig, axes, maxZs):
         cutXhigh = np.where(axeXpoints < 15)[-1][-1]
 
         if "left" in key:
-
-            print("ifffff ", key)
             filtered_z = scipy.ndimage.zoom(Zscore, filter)
             masked_array = np.ma.masked_where((filtered_z < cut), filtered_z)
             cutedZ = masked_array[:, cutXlow:cutXhigh]
@@ -213,8 +219,7 @@ def read_plot_victor_compludograms_by_Zvalue(name, fig, axes, maxZs):
         axes[key].set_transform(axes[key].transAxes)
         axes[key].set_yticks([])
 
-    # prepare_figure_victor_como(fig, axes)
-    prepare_figure_comoludogram(fig, axes)
+    prepare_figure_vic_como3x2(fig, axes)
     plt.savefig(pth3 + "fig3_victor_como_Z-score_smuth22.svg")
 
 
@@ -267,7 +272,7 @@ def read_plot_all_victor_compludograms(name, fig, axes, maxZs):
         axes[key].set_transform(axes[key].transAxes)
         axes[key].set_yticks([])
 
-    prepare_figure_victor_como(fig, axes)
+    prepare_figure_victor_como3x1(fig, axes)
     plt.savefig(pth3 + "fig3_victor_como_Z-score_smuth22.svg")
 
 
@@ -316,7 +321,7 @@ def plot_milan_xyz(ax, dataX, dataY, dataZ):
     lin2 = np.linspace(0, lenX - 1, num=lenX * filter, endpoint=True)
     axeYpoints = Yinterp(lin2)
 
-    cmap = plt.get_cmap("jet")  #''YlGn'
+    cmap = plt.get_cmap("Purples")  #''YlGn'jet"YlOrBr"
     cmap.set_bad(color="white")
     # im = ax.imshow(  np.flipud(zAux.T), aspect = 'auto', cmap = cmap  ) #axeXpoints, dataY[0:lenX],
     # interpolation='gaussian' # extent=(np.amin(dataX), np.amax(dataX), np.amin(dataY), np.amax(dataY)),
@@ -341,9 +346,14 @@ mossaic_keys = [
 ]
 
 hight = 7.8
-# fig, axes = plt.subplot_mosaic(mossaic_keys, sharex=True, sharey=True,
-#                              figsize=(6.1, hight), gridspec_kw={'hspace': 0, 'wspace': 0})
-# maxZs = read_plot_all_milan_compludograms(data_names, fig, axes)
+fig, axes = plt.subplot_mosaic(
+    mossaic_keys,
+    sharex=True,
+    sharey=True,
+    figsize=(6.1, hight),
+    gridspec_kw={"hspace": 0, "wspace": 0},
+)
+maxZs = read_plot_all_milan_compludograms(data_names, fig, axes)
 
 
 """FIGURE Comoludogram Victor"""
@@ -371,14 +381,14 @@ read_plot_victor_compludograms_by_Zvalue(filename_mat, fig, axes, maxZs)
 """3x1 Victor"""
 
 mossaic_keys = [["upper"], ["middle"], ["lower"]]
-fig, axes = plt.subplot_mosaic(
-    mossaic_keys,
-    sharex=True,
-    sharey=True,
-    figsize=(3.1, hight),
-    gridspec_kw={"hspace": 0, "wspace": 0},
-)
-read_plot_all_victor_compludograms(filename_mat, fig, axes, maxZs)
+# fig, axes = plt.subplot_mosaic(
+#    mossaic_keys,
+#    sharex=True,
+#    sharey=True,
+#    figsize=(3.1, hight),
+#    gridspec_kw={"hspace": 0, "wspace": 0},
+# )
+# read_plot_all_victor_compludograms(filename_mat, fig, axes, maxZs)
 
 
 plt.show()
