@@ -35,7 +35,7 @@ def read_milan_xyy_2col(name):
 
 def read_plot_milan_rat_lags(data_names, axes):
 
-    xpos = [59, 59, 26, 26]  # 75, 75,
+    xpos = [102, 102, 26, 26]  # 75, 75,59, 59
     ymin = 0
     ymax = 1
 
@@ -96,7 +96,6 @@ def plot_milan_lags_MI(ax, data, xpos, labels, xlim, ymin=0, ymax=1):
     ax.set_xlim(0, xlim)
     ax.axvline(xpos, ymin, ymax, lw=lw + 0.5)
     ax.plot(
-        # data[0],
         (data[0] - np.min(data[0])) / (np.max(data[0]) - np.min(data[0])),
         color="g",
         ls="-",
@@ -104,7 +103,6 @@ def plot_milan_lags_MI(ax, data, xpos, labels, xlim, ymin=0, ymax=1):
         label=labels[0],
     )
     ax.plot(
-        # data[1],
         (data[1] - np.min(data[1])) / (np.max(data[1]) - np.min(data[1])),
         color="r",
         ls="--",
@@ -118,6 +116,7 @@ def plot_milan_lags_MI(ax, data, xpos, labels, xlim, ymin=0, ymax=1):
 def plot_milan_lags_CMI(ax, data, labels):
 
     ax.plot(
+        np.arange(len(data[0]))*5,
         # (data[0]) / (np.max(data[1]) - np.min(data[1])),
         1000 * data[0],
         color="g",
@@ -126,6 +125,7 @@ def plot_milan_lags_CMI(ax, data, labels):
         label=labels[0],
     )
     ax.plot(
+        np.arange(len(data[0]))*5,
         # (data[1]) / (np.max(data[1]) - np.min(data[1])),
         1000 * data[1],
         color="r",
@@ -166,7 +166,7 @@ def prepare_figue_lag_rat(fig, axes):
 
     # IM-IC LF 8Hz, HF 100 HZ
     fig.text(
-        0.9, 0.72, "LF-HF 7-166Hz", va="center", rotation=270, fontsize=fontsize_small
+        0.9, 0.72, "LF-HF 7-167Hz", va="center", rotation=270, fontsize=fontsize_small
     )
     fig.text(
         0.9, 0.3, "LF-HF 8-100Hz", va="center", rotation=270, fontsize=fontsize_small
@@ -178,15 +178,31 @@ def prepare_figue_lag_rat(fig, axes):
     # )
 
 
+def sort_names(names):
+    new_names = ["" for x in range(len(names))]
+    for n in names:
+        if '5-167_TP' in n:
+            new_names[0] = n
+        elif '5-167_mi' in n:
+            new_names[1] = n
+        elif '8-100_TP' in n:
+            new_names[2] = n
+        elif '8-100_mi' in n:
+            new_names[3] = n
+
+    print ('\nNNNNNN', new_names, '\n')
+    return new_names
+
+
 # x10 v1 s1 phAA 12k1LX3ct1 kL4 shi1 su30 v1, 2, 3 variables (Sch-IC, Im-IC, PP-IC)
 # x10 v1 s1 AAph 21k1LX3ct1 kL4 shi1 su30
 
 
-# filename = "../../Desktop/Dropbox/transfer_inormation_prague/plots/fig1_lag/s10v2a8f50TPL3.xyy"
+# filename = "../../Desktop/Dropbox/transfer_inormation_prague/plots/fig3_lag/s10v2a8f50TPL3.xyy"
 # data = read_milan_xyy_2col(filename)
 ##plot_milan(data)
 
-# filename = "../../Desktop/Dropbox/transfer_inormation_prague/plots/fig1_lag/r11e31phTPcd4mi2q4.xyy"
+# filename = "../../Desktop/Dropbox/transfer_inormation_prague/plots/fig3_lag/r11e31phTPcd4mi2q4.xyy"
 
 # data = read_milan_xyy(filename)
 # plot_milan(data)
@@ -198,10 +214,19 @@ plt.rc("xtick", labelsize=fontsize_small)
 plt.rc("ytick", labelsize=fontsize_small)
 
 """FIGURE Rat data lag"""
-pth1 = "../../Desktop/Dropbox/transfer_inormation_prague/plots/fig1_lag/"
+pth1 = "../../Desktop/Dropbox/transfer_inormation_prague/plots/fig3_lag/"
 # root = "s10*.xyy"
 root = "rat*.xyy"
-data_names = glob(pth1 + root)
+unsorted_data_names = glob(pth1 + root)
+data_names = sort_names(unsorted_data_names)
+
+ #rat_8-100_mi2q8.xyy upper left 
+ #rat_5-167_TPL3.xyy upper right 
+ #rat_8-100_TPL3.xyy lower left 
+ #rat_5-167_mi2q8.xyy lower right 
+
+
+
 mossaic_keys = [["upper left", "upper right"], ["lower left", "lower right"]]
 fig, axes = plt.subplot_mosaic(
     mossaic_keys,
@@ -214,7 +239,8 @@ fig.subplots_adjust(hspace=0)
 # fig.subplots_adjust(wspace=0)
 read_plot_milan_rat_lags(data_names, axes)
 prepare_figue_lag_rat(fig, axes)
-plt.savefig(pth1 + "fig1_rat_lags.svg")
+plt.savefig(pth1 + "fig3_rat_lags.svg")
+plt.savefig(pth1 + "fig3_rat_lags.eps")
 
 """FIGURE Ross data lag"""
 root = "r11*.xyy"
@@ -236,7 +262,8 @@ fig.subplots_adjust(hspace=0)
 
 read_plot_milan_ross_lags(data_resufled, axes)
 prepare_figue_lag_ross(fig, axes)
-plt.savefig(pth1 + "fig1_ross_lags.svg")
+plt.savefig(pth1 + "fig3_ross_lags.svg")
+plt.savefig(pth1 + "fig3_ross_lags.eps")
 plot_margin = 0.25
 
 x0, x1, y0, y1 = plt.axis()

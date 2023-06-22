@@ -63,7 +63,7 @@ For the julia part of this project
 
 ## Steps to run the code
 
-1. place the data to be analized in ./data/input, keep gut track of the names of the files
+1. place the data to be analized in ./data/input, keep good track of the names of the files
 
 
 2. the main script is in ./scripts/main.py go there and read the instructions there
@@ -136,17 +136,17 @@ For the julia part of this project
 
 4. go to script `./src/provide_signals.py` and add a function with reads the data yiu are providing. It does not natter the format, but it shall return two numpy arrays of equal length, one with ordered sequence (time) and the data sequence. The existing functions might work, but you need to change the name of the datafile to be readed in the `./scripts/main.py`
 
-4.  at ./scripts/main.py  quote or unquote or unselect the lines 
+5.  at ./scripts/main.py  quote or unquote or unselect the lines 
       bashCommand = "julia --project=. ./scripts/compute_TE.jl ./confs/config_embeding_char.ini"
       process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
       output, error = process.communicate()
 
    in order to run or not the julia code.
 
-5. to run the python script
+6. to run the python script
 
 
-5. at ./scripts/plot_TE-corelation.py plot the apropiate plots nedded.
+7. at ./scripts/plot_TE-corelation.py plot the apropiate plots nedded.
 
 
 
